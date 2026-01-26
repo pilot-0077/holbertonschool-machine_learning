@@ -8,11 +8,15 @@ import pandas as pd
 
 def from_numpy(array):
     """
-    function to create a dataframe
+    Creates a pandas DataFrame from a NumPy ndarray.
+
+    Columns are labeled alphabetically in uppercase letters.
+
     Args:
-        array: np.ndarray from which you should create the pd.DataFrame
-    Returns: newly created pd.DataFrame
+        array (np.ndarray): NumPy array to convert
+
+    Returns:
+        pd.DataFrame: DataFrame with labeled columns
     """
-    c_list = list('A B C D E F G H')
-    reshape = c_list[:array.shape[1]]
-    return pd.DataFrame(array, columns=reshape)
+    cols = [chr(ord('A') + i) for i in range(array.shape[1])]
+    return pd.DataFrame(array, columns=cols)
