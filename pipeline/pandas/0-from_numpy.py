@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+Creates a pandas DataFrame from a NumPy ndarray.
+"""
+
 import pandas as pd
 
 
