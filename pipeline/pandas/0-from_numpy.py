@@ -9,6 +9,6 @@ def from_numpy(array):
         array: np.ndarray from which you should create the pd.DataFrame
     Returns: newly created pd.DataFrame
     """
-    c_list = list('ABCDEFGH')
+    c_list = list('A B C D E F G H')
     reshape = c_list[:array.shape[1]]
     return pd.DataFrame(array, columns=reshape)
