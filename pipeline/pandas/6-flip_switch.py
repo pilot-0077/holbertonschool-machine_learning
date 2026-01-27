@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
+"""Sort a DataFrame in reverse order and transpose it."""
 
-import pandas as pd
-from_file = __import__('2-from_file').from_file
 
-df = from_file('coinbaseUSD_1-min_data_2014-12-01_to_2019-01-09.csv', ',')
+def flip_switch(df):
+    """
+    Sort the DataFrame in reverse chronological order
+    and transpose it.
 
-df = df.sort_values(by='Timestamp', ascending=False)
-df = df.transpose()
+    Args:
+        df (pd.DataFrame): input dataframe
 
-print(df.tail(8))
+    Returns:
+        pd.DataFrame: transformed dataframe
+    """
+    df = df.sort_values(by="Timestamp", ascending=False)
+    return df.transpose()
