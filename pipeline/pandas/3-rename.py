@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
+"""Rename Timestamp to Datetime and select Datetime and Close columns."""
+
 import pandas as pd
-from_file = __import__('2-from_file').from_file
 
-df = from_file('coinbaseUSD_1-min_data_2014-12-01_to_2019-01-09.csv', ',')
 
-df = df.rename(columns={'Timestamp': 'Datetime'})
-df['Datetime'] = pd.to_datetime(df["Datetime"], unit='s')
-df = df.loc[:, ["Datetime", "Close"]]
-print(df.tail())
+def rename(df):
+    """
+    Rename the Timestamp column to Datetime, convert it to datetime,
+    and keep only Datetime and Close columns.
+
+    Args:
+        df (pd.DataFrame): input dataframe with a Timestamp column
+
+    Returns:
+        pd.DataFrame: modified dataframe
+    """
+    df = df.rename(columns={"Timestamp": "Datetime"})
+    df["Datetime"] = pd.to_datetime(df["Datetime"], unit="s")
+    return df.loc[:, ["Datetime", "Close"]]
