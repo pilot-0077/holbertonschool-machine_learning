@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
+"""Load data from a file into a pandas DataFrame."""
+
 import pandas as pd
 
+df = pd.read_csv("filename.csv")
 
 def from_file(filename, delimiter):
     """
