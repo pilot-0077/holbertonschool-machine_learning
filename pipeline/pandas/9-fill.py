@@ -1,16 +1,32 @@
 #!/usr/bin/env python3
 
 import pandas as pd
-from_file = __import__('2-from_file').from_file
 
-df = from_file('coinbaseUSD_1-min_data_2014-12-01_to_2019-01-09.csv', ',')
 
-df = df.drop(columns=['Weighted_Price'])
-df["Close"].fillna(method='ffill', inplace=True)
-df["Open"].fillna(value=df['Close'].shift(1, fill_value=0), inplace=True)
-df["High"].fillna(value=df['Close'].shift(1, fill_value=0), inplace=True)
-df["Low"].fillna(value=df['Close'].shift(1, fill_value=0), inplace=True)
-df['Volume_(BTC)'] = df['Volume_(BTC)'].fillna(0)
-df['Volume_(Currency)'] = df['Volume_(Currency)'].fillna(0)
-print(df.head())
-print(df.tail())
+def fill(df: pd.DataFrame) -> pd.DataFrame:
+    """Fill missing values in the DataFrame.
+
+    - Remove the 'Weighted_Price' column if present.
+    - Forward-fill missing values in 'Close'.
+    - Fill missing values in 'High', 'Low', 'Open' with the same row's 'Close'.
+    - Set missing values in 'Volume_(BTC)' and 'Volume_(Currency)' to 0.
+
+    Returns:
+        The modified pd.DataFrame.
+    """
+
+    # Remove the Weighted_Price column if it exists
+    df.drop(columns=['Weighted_Price'], inplace=True, errors='ignore')
+
+    # Fill Close with previous row's value
+    df['Close'].fillna(method='ffill', inplace=True)
+
+    # Fill Open, High, Low with the same row's Close value
+    for col in ('Open', 'High', 'Low'):
+        df[col].fillna(value=df['Close'], inplace=True)
+
+    # Set missing volumes to 0
+    df['Volume_(BTC)'].fillna(0, inplace=True)
+    df['Volume_(Currency)'].fillna(0, inplace=True)
+
+    return df
