@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
+"""Concatenate bitstamp and coinbase dataframes with MultiIndex keys."""
 
 import pandas as pd
-from_file = __import__('2-from_file').from_file
 
-df1 = from_file('coinbaseUSD_1-min_data_2014-12-01_to_2019-01-09.csv', ',')
-df2 = from_file('bitstampUSD_1-min_data_2012-01-01_to_2020-04-22.csv', ',')
+index = __import__("10-index").index
 
-df1 = df1.set_index('Timestamp')
-df2 = df2.set_index('Timestamp')
-df2 = df2.loc[:"1417417920"]
 
-df = pd.concat([df2, df1], keys=["bitstamp", "coinbase"])
-print(df)
+def concat(df1, df2):
+    """
+    Index both dataframes on Timestamp, take df2 rows up to 1417411920,
+    then concatenate df2 on top of df1 using keys.
+
+    Args:
+        df1 (pd.DataFrame): coinbase dataframe
+        df2 (pd.DataFrame): bitstamp dataframe
+
+    Returns:
+        pd.DataFrame: concatenated dataframe with keys
+    """
+    df1 = index(df1)
+    df2 = index(df2)
+
+    df2 = df2.loc[:1417411920]
+
+    return pd.concat([df2, df1], keys=["bitstamp", "coinbase"])
