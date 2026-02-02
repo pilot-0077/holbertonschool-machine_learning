@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-from mpl_toolkits.mplot3d import Axes3D
+"""
+101-pca.py
+Visualize Iris dataset in 3D after PCA reduction.
+"""
+
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,14 +17,22 @@ norm_data = data - data_means
 _, _, Vh = np.linalg.svd(norm_data)
 pca_data = np.matmul(norm_data, Vh[:3].T)
 
-# your code here
+# Plot PCA data in 3D
+fig = plt.figure(figsize=(6.4, 4.8))
+ax = fig.add_subplot(111, projection="3d")
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-plt.title("PCA of Iris Dataset")
+ax.set_title("PCA of Iris Dataset")
 ax.set_xlabel("U1")
 ax.set_ylabel("U2")
 ax.set_zlabel("U3")
-ax.scatter(xs=pca_data[:, 0], ys=pca_data[:, 1], zs=pca_data[:, 2],
-           c=labels, cmap=plt.cm.plasma)
+
+sc = ax.scatter(
+    pca_data[:, 0],
+    pca_data[:, 1],
+    pca_data[:, 2],
+    c=labels,
+    cmap="plasma"
+)
+
+plt.savefig("iris_plot.png")
 plt.show()
