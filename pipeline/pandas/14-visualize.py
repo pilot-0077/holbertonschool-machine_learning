@@ -1,32 +1,45 @@
 #!/usr/bin/env python3
 
-from datetime import date
 import matplotlib.pyplot as plt
 import pandas as pd
 from_file = __import__('2-from_file').from_file
 
 df = from_file('coinbaseUSD_1-min_data_2014-12-01_to_2019-01-09.csv', ',')
-df = from_file("coinbaseUSD_1-min_data_2014-12-01_to_2019-01-09.csv", ',')
 
-df = df.rename(columns={"Timestamp": "Date"})
-df["Date"] = pd.to_datetime(df["Date"], unit='s')
-df= df[df['Date'] >= '2017-01-01']
-df = df.set_index("Date")
+# Remove Weighted_Price column
+df = df.drop(columns=['Weighted_Price'], errors='ignore')
 
-df = df.drop(["Weighted_Price"], axis=1)
-df["Close"].fillna(method='ffill', inplace=True)
-df["Open"].fillna(value=df['Close'].shift(1, fill_value=0), inplace=True)
-df["High"].fillna(value=df['Close'].shift(1, fill_value=0), inplace=True)
-df["Low"].fillna(value=df['Close'].shift(1, fill_value=0), inplace=True)
-df['Volume_(BTC)'] = df['Volume_(BTC)'].fillna(0)
+# Rename Timestamp -> Date and convert to datetime
+df = df.rename(columns={'Timestamp': 'Date'})
+df['Date'] = pd.to_datetime(df['Date'], unit='s')
+
+# Index on Date
+df = df.set_index('Date')
+
+# Fill missing values
+df['Close'] = df['Close'].fillna(method='ffill')
+
+for col in ('High', 'Low', 'Open'):
+    df[col] = df[col].fillna(df['Close'])
+
 df['Volume_(BTC)'] = df['Volume_(BTC)'].fillna(0)
 df['Volume_(Currency)'] = df['Volume_(Currency)'].fillna(0)
-df2 = pd.DataFrame()
-df2["High"] = df.High.resample('D').max()
-df2["Low"] = df.Low.resample('D').min()
-df2["Volume_(BTC)"] = df["Volume_(BTC)"].resample('D').sum()
-df2["Volume_(Currency)"] = df["Volume_(Currency)"].resample('D').sum()
-df2["Open"] = df.Open.resample('D').first()
-df2["close"] = df.Close.resample('D').last()
-df2.plot()
+
+# Keep 2017+ and resample daily with required aggregations
+df = df.loc['2017-01-01':]
+
+df = df.resample('D').agg({
+    'High': 'max',
+    'Low': 'min',
+    'Open': 'mean',
+    'Close': 'mean',
+    'Volume_(BTC)': 'sum',
+    'Volume_(Currency)': 'sum'
+})
+
+# Return the transformed df before plotting (in a script: keep it as df)
+print(df)
+
+df.plot()
+plt.savefig('14visualizepandas.png')
 plt.show()
