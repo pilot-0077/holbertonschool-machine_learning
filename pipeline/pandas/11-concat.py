@@ -7,8 +7,13 @@ index = __import__('10-index').index
 
 
 def concat(df1, df2):
-    """Concatenate df2 (up to 1417411920) on top of df1 with keys."""
+    """
+    Index both dataframes on Timestamp, take df2 rows up to 1417411920,
+    then concatenate df2 on top of df1 using keys.
+    """
     df1 = index(df1)
     df2 = index(df2)
+
     df2 = df2.loc[:1417411920]
+
     return pd.concat([df2, df1], keys=["bitstamp", "coinbase"])
