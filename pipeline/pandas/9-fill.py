@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
+"""Fill missing values and drop Weighted_Price column."""
 
-import pandas as pd
 
+def fill(df):
+    """
+    Remove Weighted_Price column and fill missing values:
+    - Close: forward fill
+    - High, Low, Open: fill with same row's Close
+    - Volume_(BTC), Volume_(Currency): fill with 0
 
-def fill(df: pd.DataFrame) -> pd.DataFrame:
-    """Fill missing values in the DataFrame.
+    Returns:
+        pd.DataFrame: modified dataframe
+    """
+    df = df.drop(columns=["Weighted_Price"], errors="ignore")
 
-- Remove the 'Weighted_Price' column if present.
-- Forward-fill missing values in 'Close'.
-- Fill missing values in 'High', 'Low', 'Open' with the same row's 'Close'.
-- Set missing values in 'Volume_(BTC)' and 'Volume_(Currency)' to 0.
+    df["Close"] = df["Close"].fillna(method="ffill")
 
-Returns:
-    The modified DataFrame.
-"""
-    
-df.drop(columns=['Weighted_Price'], inplace=True, errors='ignore')
-df['Close'].fillna(method='ffill', inplace=True)
+    for col in ("High", "Low", "Open"):
+        df[col] = df[col].fillna(df["Close"])
 
-for col in ('Open', 'High', 'Low'):
-    df[col].fillna(value=df['Close'], inplace=True)
-df['Volume_(BTC)'].fillna(0, inplace=True)
-df['Volume_(Currency)'].fillna(0, inplace=True)
+    df["Volume_(BTC)"] = df["Volume_(BTC)"].fillna(0)
+    df["Volume_(Currency)"] = df["Volume_(Currency)"].fillna(0)
 
-return df
+    return df
