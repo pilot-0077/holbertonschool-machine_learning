@@ -1,29 +1,43 @@
 #!/usr/bin/env python3
+"""
+6-bars.py
+Plot a stacked bar graph showing fruit quantities per person.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.random.seed(5)
-fruit = np.random.randint(0, 20, (4, 3))
 
-# your code here
+def bars():
+    """
+    Plot a stacked bar chart of apples, bananas, oranges, and peaches
+    owned by Farrah, Fred, and Felicia.
+    """
+    np.random.seed(5)
+    fruit = np.random.randint(0, 20, (4, 3))
+    plt.figure(figsize=(6.4, 4.8))
 
-rows = ('apples', 'bananas', 'oranges', 'peaches')
-columns = ('Farrah', 'Fred', 'Felicia')
-index = columns
-colors = ('red', 'yellow', '#ff8000', '#ffe5b4')
-n_rows = len(fruit)
-bar_width = 0.5
-y_offset = np.zeros(len(columns))
+    people = ["Farrah", "Fred", "Felicia"]
+    x = np.arange(len(people))
+    width = 0.5
 
+    apples = fruit[0]
+    bananas = fruit[1]
+    oranges = fruit[2]
+    peaches = fruit[3]
 
-for row in range(n_rows):
-    plt.bar(index, fruit[row], bar_width, bottom=y_offset,
-            color=colors[row], label=rows[row])
-    y_offset = y_offset + fruit[row]
+    plt.bar(x, apples, width=width, color="red", label="apples")
+    plt.bar(x, bananas, width=width, bottom=apples,
+            color="yellow", label="bananas")
+    plt.bar(x, oranges, width=width, bottom=apples + bananas,
+            color="#ff8000", label="oranges")
+    plt.bar(x, peaches, width=width, bottom=apples + bananas + oranges,
+            color="#ffe5b4", label="peaches")
 
-
-plt.legend()
-plt.yticks(np.arange(0, 90, 10))
-plt.ylabel('Quantity of Fruit')
-plt.title("Number of Fruit per Person")
-plt.show()
+    plt.xticks(x, people)
+    plt.ylabel("Quantity of Fruit")
+    plt.ylim(0, 80)
+    plt.yticks(np.arange(0, 81, 10))
+    plt.title("Number of Fruit per Person")
+    plt.legend()
+    plt.show()
