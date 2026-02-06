@@ -3,12 +3,5 @@
 
 
 def np_elementwise(mat1, mat2):
-    """ operate matrices
-
-    Args:
-        mat1, mat2: Given matrix
-
-    Return:
-        matrix operation
-    """
+    """Performs element-wise addition, subtraction, multiplication, and division"""
     return mat1 + mat2, mat1 - mat2, mat1 * mat2, mat1 / mat2
