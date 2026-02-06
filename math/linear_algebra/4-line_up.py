@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
-""" function to add two arrays elements-wise"""
+"""Add two arrays element-wise."""
 
 
 def add_arrays(arr1, arr2):
-    """ adding two arrays element wise
-
-    Args:
-        arr1, arr2: Given arrays
-
-    Return:
-        the sum of arrays: new matrix
-
-    """
+    """Return a new list that is the element-wise sum of arr1 and arr2."""
     if len(arr1) != len(arr2):
         return None
-    else:
-        return [sum(x) for x in zip(arr1, arr2)]
+    return [a + b for a, b in zip(arr1, arr2)]
