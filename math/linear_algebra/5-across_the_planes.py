@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
-"""function to add 2D matrix into a new one"""
+"""Add two 2D matrices element-wise."""
 
 
 def add_matrices2D(mat1, mat2):
-    """ adding two matrix element wise
-
-    Args:
-        mat1, mat2: Given matrix
-
-    Return:
-        the sum of matrix: new matrix
-
-    """
+    """Return a new 2D matrix that is the element-wise sum of mat1 and mat2."""
     if len(mat1) != len(mat2):
         return None
-    elif len(mat1[0]) != len(mat2[0]):
-        return None
-    else:
-        new_mat = [[mat1[i][j] + mat2[i][j]
-                    for j in range(len(mat1[0]))] for i in range(len(mat1))]
-        for count in new_mat:
-            return new_mat
+
+    new = []
+    for row1, row2 in zip(mat1, mat2):
+        if len(row1) != len(row2):
+            return None
+        new.append([a + b for a, b in zip(row1, row2)])
+
+    return new
