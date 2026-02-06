@@ -1,19 +1,9 @@
 #!/usr/bin/env python3
-"""function to multiply 2 matrices"""
-
+"""Matrix multiplication using NumPy."""
 
 import numpy as np
 
 
 def np_matmul(mat1, mat2):
-    """ multiply two matrices
-
-    Args:
-        mat1, mat2: Given matrices
-
-    Return:
-        the new mat: new_mat
-
-    """
-    new_mat = np.dot(mat1, mat2)
-    return new_mat
+    """Return the matrix product of mat1 and mat2."""
+    return np.dot(mat1, mat2)
