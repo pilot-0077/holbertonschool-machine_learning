@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-""" Recursion function to check the shape of the matrix"""
+"""Calculates the shape of a matrix (nested lists)."""
 
 
 def matrix_shape(matrix):
-    """ return the shape of a matrix """
-    if type(matrix[0]) != list:
-        return [len(matrix)]
-    else:
-        return [len(matrix)] + matrix_shape(matrix[0])
+    """Return the shape of a matrix as a list of integers."""
+    shape = []
+    while isinstance(matrix, list):
+        shape.append(len(matrix))
+        if len(matrix) == 0:
+            break
+        matrix = matrix[0]
+    return shape
