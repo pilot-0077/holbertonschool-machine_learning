@@ -1,63 +1,42 @@
 #!/usr/bin/env python3
-"""function to add n dimension matrices with the same shape"""
+"""Concatenate two matrices along a specific axis."""
 
 
-def shape(matrix):
-    """ return the shape of a matrix
-
-    Args:
-        matrix: Given matrix
-
-    Return:
-        the shape of the matrix: ndim
-
-    """
-    if type(matrix[0]) != list:
-        return [len(matrix)]
-    else:
-        return [len(matrix)] + shape(matrix[0])
+def _shape(matrix):
+    """Return shape of nested-list matrix."""
+    if not isinstance(matrix, list):
+        return []
+    if matrix and isinstance(matrix[0], list):
+        return [len(matrix)] + _shape(matrix[0])
+    return [len(matrix)]
 
 
-def rec_matrix(mat1, mat2, rank, axis=0):
-    """ recursively operate a concatenation of a n matrix
+def _cat(mat1, mat2, axis, depth=0):
+    """Recursively concatenate along axis."""
+    if depth == axis:
+        # concatenate at this level (make a new list)
+        return [x for x in mat1] + [x for x in mat2]
 
-        Args:
-            mat1, mat2: Given matrix
-            axis: Given axis
-            rank: Given rank to check if it is in the same
-            axis mat1 and mat2
-
-        Return:
-            the concatenation of mat1, mat2 iterating recursively: ndim
-        """
-    new_mat = []
-    if (type(mat1[0]) and type(mat2[0])) and rank == axis:
-        new_mat = [y for x in [mat1, mat2] for y in x]
-        return new_mat
-    else:
-        for x in range(len(mat1)):
-            if type(mat1[x]) == list:
-                new_mat = [sum(x) for x in zip(rec_matrix(mat1[x],
-                                                          mat2[x],
-                                                          rank + 1,
-                                                          axis))]
-            return new_mat
+    # otherwise, go deeper row by row
+    return [_cat(a, b, axis, depth + 1) for a, b in zip(mat1, mat2)]
 
 
 def cat_matrices(mat1, mat2, axis=0):
-    """ concatenate n dimesnional matrices with the same shape
+    """Concatenate two matrices along axis; return None if impossible."""
+    s1 = _shape(mat1)
+    s2 = _shape(mat2)
 
-    Args:
-        mat1, mat2: Given matrix
-        axis: given axis
-
-    Return:
-        new_mat: Recursively concatenation of mat1 and mat2
-
-    """
-    if shape(mat1) != shape(mat2):
+    # must have same number of dimensions
+    if len(s1) != len(s2):
         return None
-    else:
-        rank = 0
-        new_mat = rec_matrix(mat1, mat2, rank, axis)
-        return new_mat
+
+    # axis must be valid
+    if axis < 0 or axis >= len(s1):
+        return None
+
+    # all dims except the concatenation axis must match
+    for i in range(len(s1)):
+        if i != axis and s1[i] != s2[i]:
+            return None
+
+    return _cat(mat1, mat2, axis)
