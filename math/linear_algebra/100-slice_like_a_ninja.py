@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
-"""function to slice matrix along specific values"""
+"""Slice a NumPy array along specific axes."""
 
 
-def np_slice(matrix, axes={}):
-    """ slice matrix along specific value
+def np_slice(matrix, axes=None):
+    """Return a sliced copy of matrix according to axes."""
+    if axes is None:
+        axes = {}
 
-    Args:
-        matrix: Given matrix
+    slicers = [slice(None)] * matrix.ndim
+    for axis, spec in axes.items():
+        slicers[axis] = slice(*spec)
 
-    Return:
-        the slice mat: slice_mat
-
-    """
-    slice_mat = [slice(None, None, None)] * matrix.ndim
-    for k, v in sorted(axes.items()):
-        slice_val = slice(*v)
-        slice_mat[k] = slice_val
-    matrix = matrix[tuple(slice_mat)]
-    return matrix
+    return matrix[tuple(slicers)].copy()
