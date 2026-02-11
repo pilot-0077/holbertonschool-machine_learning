@@ -39,9 +39,9 @@ def determinant(matrix):
     Returns: Determinant of matrix
     """
     mat_l = len(matrix)
-    if type(matrix) != list or len(matrix) == 0:
+    if not isinstance(matrix, list) or len(matrix) == 0:
         raise TypeError("matrix must be a list of lists")
-    if not all([type(mat) == list for mat in matrix]):
+    if not all(isinstance(mat, list) for mat in matrix):
         raise TypeError("matrix must be a list of lists")
     if matrix[0] and mat_l != len(matrix[0]):
         raise ValueError("matrix must be a square matrix")
