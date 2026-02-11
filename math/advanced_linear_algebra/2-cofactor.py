@@ -65,7 +65,6 @@ def cofactor(matrix):
     mat_l = len(matrix)
     range_mat_l = range(len(matrix))
 
-    
     if not isinstance(matrix, list) or len(matrix) == 0:
         raise TypeError("matrix must be a list of lists")
     if not all(isinstance(mat, list) for mat in matrix):
