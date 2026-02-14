@@ -6,7 +6,8 @@ from scipy import special
 def posterior(x, n, p1, p2):
     """
     Calculates the posterior probability that the probability of
-    developing severe side effects falls within a specific range.
+    developing severe side effects falls within a specific 
+    range.
     """
     if not isinstance(n, int) or n < 1:
         raise ValueError("n must be a positive integer")
