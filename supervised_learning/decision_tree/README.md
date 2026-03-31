@@ -1,9 +1,9 @@
 # Decision Tree
 
-This project focuses on implementing a Decision Tree from scratch.
+This project implements the basic components of a decision tree using Python and NumPy.
 
-## Concepts
-- Tree structure
-- Nodes and leaves
-- Recursion
-- Depth calculation
+## Files
+- `0-build_decision_tree.py`
+- `1-build_decision_tree.py`
+- `2-build_decision_tree.py`
+- `3-build_decision_tree.py`
