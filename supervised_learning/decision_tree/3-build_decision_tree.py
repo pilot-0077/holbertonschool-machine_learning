@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module that defines the classes Node, Leaf, and Decision_Tree.
+Module that defines classes for building a decision tree.
 """
 
 import numpy as np
@@ -14,15 +14,15 @@ class Node:
     def __init__(self, feature=None, threshold=None, left_child=None,
                  right_child=None, is_root=False, depth=0):
         """
-        Initialize a Node instance.
+        Initialize a node.
 
         Args:
-            feature: feature used for the split
-            threshold: threshold used for the split
+            feature: feature index used for the split
+            threshold: threshold value used for the split
             left_child: left child node
             right_child: right child node
             is_root: indicates if the node is the root
-            depth: depth of the node
+            depth: depth of the node in the tree
         """
         self.feature = feature
         self.threshold = threshold
@@ -35,7 +35,7 @@ class Node:
 
     def max_depth_below(self):
         """
-        Return the maximum depth below this node.
+        Return the maximum depth below the node.
         """
         left_depth = self.left_child.max_depth_below()
         right_depth = self.right_child.max_depth_below()
@@ -43,7 +43,7 @@ class Node:
 
     def count_nodes_below(self, only_leaves=False):
         """
-        Count the nodes below this node.
+        Count the number of nodes below this node.
 
         Args:
             only_leaves: if True, count only leaves
@@ -51,7 +51,7 @@ class Node:
         Returns:
             The number of nodes below this node
         """
-        if only_leaves is True:
+        if only_leaves:
             count = 0
         else:
             count = 1
@@ -90,7 +90,7 @@ class Leaf(Node):
 
     def __init__(self, value, depth=None):
         """
-        Initialize a Leaf instance.
+        Initialize a leaf.
 
         Args:
             value: value stored in the leaf
@@ -109,7 +109,7 @@ class Leaf(Node):
 
     def count_nodes_below(self, only_leaves=False):
         """
-        Count the nodes below this leaf.
+        Count the number of nodes below this leaf.
 
         Args:
             only_leaves: if True, count only leaves
@@ -123,7 +123,7 @@ class Leaf(Node):
         """
         Return the string representation of the leaf.
         """
-        return "-> leaf [value={}] ".format(self.value)
+        return "-> leaf [value={}]".format(self.value)
 
     def get_leaves_below(self):
         """
@@ -140,13 +140,13 @@ class Decision_Tree:
     def __init__(self, max_depth=10, min_pop=1, seed=0,
                  split_criterion="random", root=None):
         """
-        Initialize a Decision_Tree instance.
+        Initialize a decision tree.
 
         Args:
-            max_depth: maximum depth of the tree
-            min_pop: minimum population in a node
-            seed: seed for random generator
-            split_criterion: criterion used to split
+            max_depth: maximum depth allowed
+            min_pop: minimum population allowed in a node
+            seed: seed for the random generator
+            split_criterion: split criterion to use
             root: root node of the tree
         """
         self.rng = np.random.default_rng(seed)
@@ -169,7 +169,7 @@ class Decision_Tree:
 
     def count_nodes(self, only_leaves=False):
         """
-        Count the nodes in the tree.
+        Count the number of nodes in the tree.
 
         Args:
             only_leaves: if True, count only leaves
