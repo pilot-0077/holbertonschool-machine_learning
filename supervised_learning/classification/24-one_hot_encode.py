@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Module that defines one-hot encoding."""
 
-
 import numpy as np
 
 
@@ -20,4 +19,3 @@ def one_hot_encode(Y, classes):
         return one_hot
     except Exception:
         return None
-        
