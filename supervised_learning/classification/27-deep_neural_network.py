@@ -78,7 +78,7 @@ class DeepNeuralNetwork:
         """Calculates the cost using cross-entropy loss."""
         m = Y.shape[1]
 
-        return -np.sum(Y * np.log(A + 1.0000001e-8)) / m
+        return -np.sum(Y * np.log(A)) / m
 
     def evaluate(self, X, Y):
         """Evaluates the deep neural network."""
