@@ -70,8 +70,8 @@ class DeepNeuralNetwork:
             Z = np.matmul(W, A_prev) + b
 
             if i == self.__L:
-                t = np.exp(Z - np.max(Z, axis=0, keepdims=True))
-                A = t / np.sum(t, axis=0, keepdims=True)
+                T = np.exp(Z)
+                A = T / np.sum(T, axis=0, keepdims=True)
             else:
                 A = 1 / (1 + np.exp(-Z))
 
