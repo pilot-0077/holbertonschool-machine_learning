@@ -112,18 +112,13 @@ class DeepNeuralNetwork:
             dW = np.matmul(dZ, A_prev.T) / m
             db = np.sum(dZ, axis=1, keepdims=True) / m
 
-            self.__weights["W{}".format(i)] = (
-                self.__weights["W{}".format(i)] - alpha * dW
-            )
-
-            self.__weights["b{}".format(i)] = (
-                self.__weights["b{}".format(i)] - alpha * db
-            )
+            self.__weights["W{}".format(i)] -= alpha * dW
+            self.__weights["b{}".format(i)] -= alpha * db
 
             if i > 1:
                 A = cache["A{}".format(i - 1)]
                 dZ = np.matmul(W.T, dZ) * A * (1 - A)
-                
+
     def train(
         self,
         X,
