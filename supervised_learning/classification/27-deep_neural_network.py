@@ -11,16 +11,12 @@ class DeepNeuralNetwork:
 
     def __init__(self, nx, layers):
         """Initialize the deep neural network."""
-
         if not isinstance(nx, int):
             raise TypeError("nx must be an integer")
-
         if nx < 1:
             raise ValueError("nx must be a positive integer")
-
         if not isinstance(layers, list) or len(layers) == 0:
             raise TypeError("layers must be a list of positive integers")
-
         for layer in layers:
             if not isinstance(layer, int) or layer <= 0:
                 raise TypeError("layers must be a list of positive integers")
@@ -59,7 +55,6 @@ class DeepNeuralNetwork:
 
     def forward_prop(self, X):
         """Calculates forward propagation."""
-
         self.__cache["A0"] = X
 
         for i in range(1, self.__L + 1):
@@ -81,14 +76,12 @@ class DeepNeuralNetwork:
 
     def cost(self, Y, A):
         """Calculates the cost using cross-entropy loss."""
-
         m = Y.shape[1]
 
-        return -np.sum(Y * np.log(A)) / m
+        return -np.sum(Y * np.log(A + 1.0000001e-8)) / m
 
     def evaluate(self, X, Y):
         """Evaluates the deep neural network."""
-
         A, _ = self.forward_prop(X)
         cost = self.cost(Y, A)
 
@@ -99,7 +92,6 @@ class DeepNeuralNetwork:
 
     def gradient_descent(self, Y, cache, alpha=0.05):
         """Calculates one pass of gradient descent."""
-
         m = Y.shape[1]
         weights_copy = self.__weights.copy()
 
@@ -112,8 +104,13 @@ class DeepNeuralNetwork:
             dW = np.matmul(dZ, A_prev.T) / m
             db = np.sum(dZ, axis=1, keepdims=True) / m
 
-            self.__weights["W{}".format(i)] -= alpha * dW
-            self.__weights["b{}".format(i)] -= alpha * db
+            self.__weights["W{}".format(i)] = (
+                self.__weights["W{}".format(i)] - alpha * dW
+            )
+
+            self.__weights["b{}".format(i)] = (
+                self.__weights["b{}".format(i)] - alpha * db
+            )
 
             if i > 1:
                 A = cache["A{}".format(i - 1)]
@@ -130,23 +127,18 @@ class DeepNeuralNetwork:
         step=100
     ):
         """Trains the deep neural network."""
-
         if not isinstance(iterations, int):
             raise TypeError("iterations must be an integer")
-
         if iterations <= 0:
             raise ValueError("iterations must be a positive integer")
-
         if not isinstance(alpha, float):
             raise TypeError("alpha must be a float")
-
         if alpha <= 0:
             raise ValueError("alpha must be positive")
 
         if verbose or graph:
             if not isinstance(step, int):
                 raise TypeError("step must be an integer")
-
             if step <= 0 or step > iterations:
                 raise ValueError("step must be positive and <= iterations")
 
@@ -182,7 +174,6 @@ class DeepNeuralNetwork:
 
     def save(self, filename):
         """Saves the instance object to a file in pickle format."""
-
         if not filename.endswith(".pkl"):
             filename += ".pkl"
 
@@ -192,7 +183,6 @@ class DeepNeuralNetwork:
     @staticmethod
     def load(filename):
         """Loads a pickled DeepNeuralNetwork object."""
-
         try:
             with open(filename, "rb") as f:
                 return pickle.load(f)
