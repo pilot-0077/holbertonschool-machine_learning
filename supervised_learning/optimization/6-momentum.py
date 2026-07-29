@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Creates a TensorFlow momentum optimization operation."""
+"""Creates a momentum optimization operation in TensorFlow."""
 
 import tensorflow as tf
 
 
 def create_momentum_op(loss, alpha, beta1):
-    """Creates the training operation using momentum optimization.
+    """Creates a momentum optimizer training operation.
 
     Args:
-        loss: Loss of the neural network.
+        loss: Loss tensor of the network.
         alpha: Learning rate.
         beta1: Momentum weight.
 
