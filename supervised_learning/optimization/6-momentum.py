@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
-"""Script of momentum in Tensorflow"""
+"""Creates a TensorFlow momentum optimization operation."""
 
 import tensorflow as tf
 
 
 def create_momentum_op(loss, alpha, beta1):
-    """
-    Function to train a DNN with TF momentum optimization
+    """Creates the training operation using momentum optimization.
+
     Args:
-        loss: loss of the network
-        alpha: learning rate
-        beta1: momentum weight
+        loss: Loss of the neural network.
+        alpha: Learning rate.
+        beta1: Momentum weight.
 
-    Returns: momentum optimization operation
-
+    Returns:
+        The momentum optimization operation.
     """
-    optimizer = tf.train.MomentumOptimizer(alpha, beta1).minimize(loss)
-    return optimizer
+    optimizer = tf.compat.v1.train.MomentumOptimizer(
+        learning_rate=alpha,
+        momentum=beta1
+    )
+
+    return optimizer.minimize(loss)
