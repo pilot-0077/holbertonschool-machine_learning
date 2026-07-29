@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
-"""Script to implement learning rate decay in DNN with Tensorflow"""
+"""Creates an inverse time learning rate decay schedule."""
 
 import tensorflow as tf
 
 
-def learning_rate_decay(alpha, decay_rate, global_step, decay_step):
-    """
-    learning rate decay operation in tensorflow using inverse time decay:
+def learning_rate_decay(alpha, decay_rate, decay_step):
+    """Creates an inverse time learning rate decay schedule.
+
     Args:
-        alpha: original learning rate
-        decay_rate: weight used to determine the rate at which alpha will decay
-        global_step: number of passes of gradient descent that have elapsed
-        decay_step: number of passes of gradient descent that should occur
-                    before alpha is decayed further
+        alpha: Initial learning rate.
+        decay_rate: Rate at which the learning rate decays.
+        decay_step: Number of steps before each decay.
 
-    Returns:  learning rate decay operation
-
+    Returns:
+        A TensorFlow inverse time decay schedule.
     """
-    LRD = tf.train.inverse_time_decay(alpha, global_step, decay_step,
-                                      decay_rate, staircase=True)
-    return LRD
+    schedule = tf.keras.optimizers.schedules.InverseTimeDecay(
+        initial_learning_rate=alpha,
+        decay_steps=decay_step,
+        decay_rate=decay_rate,
+        staircase=True
+    )
+
+    return schedule
