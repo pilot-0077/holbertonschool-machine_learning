@@ -1,38 +1,24 @@
 #!/usr/bin/env python3
-"""Creates a batch normalization layer."""
+"""Normalizes an unactivated layer using batch normalization."""
 
-import tensorflow as tf
+import numpy as np
 
 
-def create_batch_norm_layer(prev, n, activation):
-    """Creates a dense layer followed by batch normalization.
+def batch_norm(Z, gamma, beta, epsilon):
+    """Normalizes an unactivated output using batch normalization.
 
     Args:
-        prev: Activated output of the previous layer.
-        n: Number of nodes in the new layer.
-        activation: Activation function to apply.
+        Z: numpy.ndarray of shape (m, n) containing unactivated outputs.
+        gamma: numpy.ndarray of shape (1, n) containing scale parameters.
+        beta: numpy.ndarray of shape (1, n) containing offset parameters.
+        epsilon: Small value used to avoid division by zero.
 
     Returns:
-        The activated output tensor of the new layer.
+        The batch-normalized output.
     """
-    initializer = tf.keras.initializers.VarianceScaling(
-        scale=2.0,
-        mode='fan_avg'
-    )
+    mean = np.mean(Z, axis=0)
+    variance = np.var(Z, axis=0)
 
-    dense = tf.keras.layers.Dense(
-        units=n,
-        activation=None,
-        kernel_initializer=initializer
-    )
+    Z_normalized = (Z - mean) / np.sqrt(variance + epsilon)
 
-    output = dense(prev)
-
-    batch_norm = tf.keras.layers.BatchNormalization(
-        axis=-1,
-        epsilon=1e-8
-    )
-
-    normalized = batch_norm(output)
-
-    return activation(normalized)
+    return gamma * Z_normalized + beta
