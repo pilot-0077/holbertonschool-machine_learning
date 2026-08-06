@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Performs a convolution on images with channels."""
+"""Performs a convolution on images using multiple kernels."""
 
 import numpy as np
 
 
-def convolve_channels(images, kernel, padding='same', stride=(1, 1)):
-    """Performs a convolution on images with multiple channels.
+def convolve(images, kernels, padding='same', stride=(1, 1)):
+    """Performs a convolution on images using multiple kernels.
 
     Args:
-        images: NumPy array with shape (m, h, w, c).
-        kernel: NumPy array with shape (kh, kw, c).
+        images: NumPy array with shape (m, h, w, c) containing images.
+        kernels: NumPy array with shape (kh, kw, c, nc).
         padding: Either 'same', 'valid', or a tuple (ph, pw).
         stride: Tuple (sh, sw) containing the strides.
 
@@ -17,7 +17,7 @@ def convolve_channels(images, kernel, padding='same', stride=(1, 1)):
         NumPy array containing the convolved images.
     """
     m, h, w, _ = images.shape
-    kh, kw, _ = kernel.shape
+    kh, kw, _, nc = kernels.shape
     sh, sw = stride
 
     if padding == 'same':
@@ -47,7 +47,7 @@ def convolve_channels(images, kernel, padding='same', stride=(1, 1)):
     output_h = ((h + (2 * pad_h) - kh) // sh) + 1
     output_w = ((w + (2 * pad_w) - kw) // sw) + 1
 
-    convolved = np.zeros((m, output_h, output_w))
+    convolved = np.zeros((m, output_h, output_w, nc))
 
     for i in range(output_h):
         for j in range(output_w):
@@ -61,8 +61,8 @@ def convolve_channels(images, kernel, padding='same', stride=(1, 1)):
                 :
             ]
 
-            convolved[:, i, j] = np.sum(
-                region * kernel,
+            convolved[:, i, j, :] = np.sum(
+                region[:, :, :, :, np.newaxis] * kernels,
                 axis=(1, 2, 3)
             )
 
