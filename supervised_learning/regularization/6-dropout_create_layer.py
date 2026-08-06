@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
-"""Script to implement dropout in tensorflow"""
+"""Creates a neural network layer using dropout."""
 
 import tensorflow as tf
 
 
-def dropout_create_layer(prev, n, activation, keep_prob):
-    """
-    Function that uses dropout in tensorflow
+def dropout_create_layer(prev, n, activation, keep_prob, training=True):
+    """Creates a dense layer followed by dropout.
+
     Args:
-        prev: tensor containing the output of the previous layer
-        n: number of nodes the new layer should contain
-        activation: activation function that should be used on the layer
-        keep_prob: probability that a node will be kept
+        prev: Tensor containing the output of the previous layer.
+        n: Number of nodes in the new layer.
+        activation: Activation function for the new layer.
+        keep_prob: Probability that a node is kept.
+        training: Whether the layer is operating in training mode.
 
-    Returns: output of the new layer
-
+    Returns:
+        The output tensor of the layer after dropout.
     """
-    dropout = tf.layers.Dropout(keep_prob)
-    init = tf.contrib.layers.variance_scaling_initializer(mode="FAN_AVG")
-    tensor = tf.layers.Dense(units=n, activation=activation,
-                             kernel_initializer=init,
-                             kernel_regularizer=dropout)
-    return tensor(prev)
+    initializer = tf.keras.initializers.VarianceScaling(
+        scale=2.0,
+        mode="fan_avg"
+    )
+
+    dense = tf.keras.layers.Dense(
+        units=n,
+        activation=activation,
+        kernel_initializer=initializer
+    )
+
+    output = dense(prev)
+
+    dropout = tf.keras.layers.Dropout(
+        rate=1 - keep_prob
+    )
+
+    return dropout(output, training=training)
