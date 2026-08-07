@@ -1,70 +1,70 @@
 #!/usr/bin/env python3
-"""Script for implement a Lenet5 using tensorflow"""
+"""Builds a modified LeNet-5 architecture using Keras."""
 
-import tensorflow as tf
+from tensorflow import keras as K
 
 
-def lenet5(x, y):
-    """
-    Function to use a lenet5 with tensorflow
+def lenet5(X):
+    """Build a modified LeNet-5 neural network.
+
     Args:
-        x: tf.placeholder of shape (m, 28, 28, 1)
-           containing the input images for the network
-           m: the number of images
-        y: tf.placeholder of shape (m, 10) containing
-           the one-hot labels for the network
+        X: Keras Input of shape (m, 28, 28, 1) containing input images.
 
-    Returns: a tensor for the softmax activated output,
-             training operation that utilizes Adam
-             optimization (with default hyperparameters),
-             tensor for the loss of the network,
-             tensor for the accuracy of the network
+    Returns:
+        A compiled Keras Model using Adam optimization and accuracy metrics.
     """
-    # initialize global parameters
-    init = tf.contrib.layers.variance_scaling_initializer()
+    conv1 = K.layers.Conv2D(
+        filters=6,
+        kernel_size=(5, 5),
+        padding='same',
+        activation='relu',
+        kernel_initializer=K.initializers.HeNormal(seed=0)
+    )(X)
 
-    # Set the variable of activation 'relu'
-    activation = tf.nn.relu
+    pool1 = K.layers.MaxPooling2D(
+        pool_size=(2, 2),
+        strides=(2, 2)
+    )(conv1)
 
-    # First CONVNET
-    conv1 = tf.layers.Conv2D(filters=6, kernel_size=5,
-                             padding='same', activation=activation,
-                             kernel_initializer=init)(x)
-    # Pool net of CONV1
-    pool1 = tf.layers.MaxPooling2D(pool_size=[2, 2], strides=2)(conv1)
+    conv2 = K.layers.Conv2D(
+        filters=16,
+        kernel_size=(5, 5),
+        padding='valid',
+        activation='relu',
+        kernel_initializer=K.initializers.HeNormal(seed=0)
+    )(pool1)
 
-    # Second CONVNET
-    conv2 = tf.layers.Conv2D(filters=16, kernel_size=5,
-                             padding='valid', activation=activation,
-                             kernel_initializer=init)(pool1)
-    # Pool net of CONV2
-    pool2 = tf.layers.MaxPooling2D(pool_size=[2, 2], strides=2)(conv2)
+    pool2 = K.layers.MaxPooling2D(
+        pool_size=(2, 2),
+        strides=(2, 2)
+    )(conv2)
 
-    # Flatten the convolutional layers
-    flatten = tf.layers.Flatten()(pool2)
+    flatten = K.layers.Flatten()(pool2)
 
-    # Fully connected layer 1
-    FC1 = tf.layers.Dense(units=120, activation=activation,
-                          kernel_initializer=init)(flatten)
-    # Fully connected layer 2
-    FC2 = tf.layers.Dense(units=84, activation=activation,
-                          kernel_initializer=init)(FC1)
-    # Fully connected layer 3
-    FC3 = tf.layers.Dense(units=10, kernel_initializer=init)(FC2)
+    dense1 = K.layers.Dense(
+        units=120,
+        activation='relu',
+        kernel_initializer=K.initializers.HeNormal(seed=0)
+    )(flatten)
 
-    # Prediction variable
-    y_pred = FC3
+    dense2 = K.layers.Dense(
+        units=84,
+        activation='relu',
+        kernel_initializer=K.initializers.HeNormal(seed=0)
+    )(dense1)
 
-    # Loss function
-    loss = tf.losses.softmax_cross_entropy(y, FC3)
+    output = K.layers.Dense(
+        units=10,
+        activation='softmax',
+        kernel_initializer=K.initializers.HeNormal(seed=0)
+    )(dense2)
 
-    # Train function
-    train = tf.train.AdamOptimizer().minimize(loss)
+    model = K.Model(inputs=X, outputs=output)
 
-    # accuracy
-    correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_pred, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    model.compile(
+        optimizer=K.optimizers.Adam(),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
 
-    y_pred = tf.nn.softmax(y_pred)
-
-    return y_pred, train, loss, accuracy
+    return model
