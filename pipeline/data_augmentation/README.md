@@ -23,3 +23,12 @@ Contains the function:
 
 ```python
 def flip_image(image):
+
+### 4. Brightness
+
+File: `4-brightness.py`
+
+Contains the function:
+
+```python
+def change_brightness(image, max_delta):
