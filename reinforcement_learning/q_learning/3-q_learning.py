@@ -53,7 +53,7 @@ def train(env, Q, episodes=5000, max_steps=100, alpha=0.1, gamma=0.99,
 
         total_rewards.append(episode_reward)
 
-          epsilon = min_epsilon + (1 - min_epsilon) * \
-              np.exp(-epsilon_decay * episode)
+        epsilon = min_epsilon + (1 - min_epsilon) * \
+            np.exp(-epsilon_decay * episode)
 
     return Q, total_rewards
