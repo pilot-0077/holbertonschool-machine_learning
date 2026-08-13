@@ -1,119 +1,80 @@
 # Deep Convolutional Neural Networks
 
 This project explores modern deep convolutional neural network architectures
-and the techniques used to build and train very deep networks.
+and techniques used to build and train very deep networks with TensorFlow and
+Keras.
 
 ## Learning Objectives
-
-By the end of this project, I should be able to explain:
 
 - What a skip connection is
 - What a bottleneck layer is
 - What the Inception Network is
-- What ResNet is
-- What ResNeXt is
-- What DenseNet is
+- What ResNet, ResNeXt, and DenseNet are
 - How modern CNN architectures improve gradient flow and feature reuse
-- How to replicate a neural network architecture by reading a journal article
-- How to translate an architecture diagram or table into TensorFlow/Keras code
+- How to reproduce a neural network architecture from a research paper
 
-## Key Concepts
+## Tasks
 
-### Skip Connections
+### 0. Inception Block
 
-Skip connections allow information to bypass one or more layers and be
-combined with the output of deeper layers. They are a central idea behind
-Residual Networks.
+File: `0-inception_block.py`
 
-### Bottleneck Layers
+Builds an Inception block with parallel 1x1, 3x3, 5x5, and max-pooling
+branches followed by concatenation.
 
-Bottleneck layers commonly use `1x1` convolutions to reduce the number of
-channels before more computationally expensive convolutions.
+### 1. Inception Network
 
-### Inception Networks
+File: `1-inception_network.py`
 
-Inception networks process the same input through several parallel operations,
-such as different convolution sizes and pooling, before concatenating their
-outputs.
+Builds the Inception network for input images with shape `(224, 224, 3)` using
+the Inception block from Task 0.
 
-### ResNet
-
-Residual Networks use skip connections and residual learning to make very
-deep neural networks easier to train.
-
-### ResNeXt
-
-ResNeXt extends the residual-network idea by using multiple parallel
-transformations inside a residual block.
-
-### DenseNet
-
-DenseNet connects each layer to all subsequent layers within a dense block,
-encouraging feature reuse and improving gradient flow.
-
-## Task 2 - Identity Block
+### 2. Identity Block
 
 File: `2-identity_block.py`
 
-Implements an identity block based on the ResNet architecture.
+Builds a ResNet identity block with a bottleneck structure and an identity
+shortcut connection. Convolutional weights use He normal initialization with a
+seed of 0.
 
-The block contains:
-
-- 1x1 convolution
-- Batch normalization
-- ReLU activation
-- 3x3 convolution
-- Batch normalization
-- ReLU activation
-- 1x1 convolution
-- Batch normalization
-- Identity shortcut connection
-- Final ReLU activation
-
-All convolutional layers use He normal initialization with a seed of 0.
-
-## Task 3 - Projection Block
+### 3. Projection Block
 
 File: `3-projection_block.py`
 
-Implements a projection block based on the ResNet architecture.
+Builds a ResNet projection block. The shortcut path uses a 1x1 convolution so
+that its dimensions match the main path before addition. Convolutional weights
+use He normal initialization with a seed of 0.
 
-The main path contains:
-
-- 1x1 convolution with stride `s`
-- Batch normalization and ReLU activation
-- 3x3 convolution
-- Batch normalization and ReLU activation
-- 1x1 convolution
-- Batch normalization
-
-The shortcut path uses a 1x1 convolution with stride `s` followed by batch
-normalization so that its dimensions match the main path before addition.
-A final ReLU activation is applied after the two paths are added.
-
-All convolutional layers use He normal initialization with a seed of 0.
-
-## Task 4 - ResNet-50
+### 4. ResNet-50
 
 File: `4-resnet50.py`
 
-Builds the ResNet-50 architecture for input images with shape
-`(224, 224, 3)` using the identity and projection blocks from the previous
-tasks.
+Builds the ResNet-50 architecture using projection and identity blocks, ending
+with average pooling and a 1000-class softmax output.
 
-The network contains:
+### 5. Dense Block
 
-- Initial 7x7 convolution with 64 filters and stride 2
-- Batch normalization and ReLU activation
-- 3x3 max pooling with stride 2
-- Stage 2: 1 projection block and 2 identity blocks
-- Stage 3: 1 projection block and 3 identity blocks
-- Stage 4: 1 projection block and 5 identity blocks
-- Stage 5: 1 projection block and 2 identity blocks
-- 7x7 average pooling
-- 1000-unit softmax output layer
+File: `5-dense_block.py`
 
-Weights use He normal initialization with a seed of 0.
+Builds a DenseNet-B dense block using bottleneck layers. Each convolution is
+preceded by batch normalization and ReLU activation. Weights use He normal
+initialization with a seed of 0.
+
+### 6. Transition Layer
+
+File: `6-transition_layer.py`
+
+Builds a DenseNet-C transition layer using batch normalization, ReLU, a 1x1
+convolution for compression, and average pooling. Weights use He normal
+initialization with a seed of 0.
+
+### 7. DenseNet-121
+
+File: `7-densenet121.py`
+
+Builds the DenseNet-121 architecture with dense blocks of 6, 12, 24, and 16
+layers separated by transition layers, followed by average pooling and a
+1000-class softmax output.
 
 ## Repository
 
