@@ -1,61 +1,84 @@
 #!/usr/bin/env python3
-"""Script to create an inception block"""
+"""Builds the Inception network."""
 
-import tensorflow.keras as K
+from tensorflow import keras as K
 
 inception_block = __import__('0-inception_block').inception_block
 
 
 def inception_network():
-    """
+    """Build the Inception network.
 
     Returns:
-
+        The Keras model.
     """
     X = K.Input(shape=(224, 224, 3))
-    init = K.initializers.he_normal()
-    activation = 'relu'
 
-    conv_1 = K.layers.Conv2D(filters=64, kernel_size=7, strides=(2, 2),
-                             padding='same', activation=activation,
-                             kernel_initializer=init)(X)
-    max_pool_1 = K.layers.MaxPooling2D(pool_size=[3, 3], strides=(2, 2),
-                                       padding='same')(conv_1)
-    conv_2P = K.layers.Conv2D(filters=64, kernel_size=1, padding='valid',
-                              activation=activation,
-                              kernel_initializer=init)(max_pool_1)
-    conv_2 = K.layers.Conv2D(filters=192, kernel_size=3, padding='same',
-                             activation=activation,
-                             kernel_initializer=init)(conv_2P)
-    max_pool_2 = K.layers.MaxPooling2D(pool_size=[3, 3], strides=(2, 2),
-                                       padding='same')(conv_2)
+    conv1 = K.layers.Conv2D(
+        filters=64,
+        kernel_size=(7, 7),
+        strides=(2, 2),
+        padding='same',
+        activation='relu'
+    )(X)
 
-    iblock_1 = inception_block(max_pool_2, [64, 96, 128, 16, 32, 32])
-    iblock_2 = inception_block(iblock_1, [128, 128, 192, 32, 96, 64])
+    pool1 = K.layers.MaxPooling2D(
+        pool_size=(3, 3),
+        strides=(2, 2),
+        padding='same'
+    )(conv1)
 
-    max_pool_3 = K.layers.MaxPooling2D(pool_size=[3, 3], strides=(2, 2),
-                                       padding='same')(iblock_2)
+    conv2_reduce = K.layers.Conv2D(
+        filters=64,
+        kernel_size=(1, 1),
+        padding='same',
+        activation='relu'
+    )(pool1)
 
-    iblock_3 = inception_block(max_pool_3, [192, 96, 208, 16, 48, 64])
-    iblock_4 = inception_block(iblock_3, [160, 112, 224, 24, 64, 64])
-    iblock_5 = inception_block(iblock_4, [128, 128, 256, 24, 64, 64])
-    iblock_6 = inception_block(iblock_5, [112, 144, 288, 32, 64, 64])
-    iblock_7 = inception_block(iblock_6, [256, 160, 320, 32, 128, 128])
+    conv2 = K.layers.Conv2D(
+        filters=192,
+        kernel_size=(3, 3),
+        padding='same',
+        activation='relu'
+    )(conv2_reduce)
 
-    max_pool_4 = K.layers.MaxPooling2D(pool_size=[3, 3], strides=(2, 2),
-                                       padding='same')(iblock_7)
+    pool2 = K.layers.MaxPooling2D(
+        pool_size=(3, 3),
+        strides=(2, 2),
+        padding='same'
+    )(conv2)
 
-    iblock_8 = inception_block(max_pool_4, [256, 160, 320, 32, 128, 128])
-    iblock_9 = inception_block(iblock_8, [384, 192, 384, 48, 128, 128])
+    block1 = inception_block(pool2, [64, 96, 128, 16, 32, 32])
+    block2 = inception_block(block1, [128, 128, 192, 32, 96, 64])
 
-    avg_pool = K.layers.AveragePooling2D(pool_size=[7, 7], strides=(1, 1),
-                                         padding='valid')(iblock_9)
+    pool3 = K.layers.MaxPooling2D(
+        pool_size=(3, 3),
+        strides=(2, 2),
+        padding='same'
+    )(block2)
 
-    dropout = K.layers.Dropout(.4)(avg_pool)
+    block3 = inception_block(pool3, [192, 96, 208, 16, 48, 64])
+    block4 = inception_block(block3, [160, 112, 224, 24, 64, 64])
+    block5 = inception_block(block4, [128, 128, 256, 24, 64, 64])
+    block6 = inception_block(block5, [112, 144, 288, 32, 64, 64])
+    block7 = inception_block(block6, [256, 160, 320, 32, 128, 128])
 
-    FC = K.layers.Dense(1000, activation='softmax',
-                        kernel_initializer=init)(dropout)
+    pool4 = K.layers.MaxPooling2D(
+        pool_size=(3, 3),
+        strides=(2, 2),
+        padding='same'
+    )(block7)
 
-    model = K.models.Model(inputs=X, outputs=FC)
+    block8 = inception_block(pool4, [256, 160, 320, 32, 128, 128])
+    block9 = inception_block(block8, [384, 192, 384, 48, 128, 128])
 
-    return model
+    avg_pool = K.layers.AveragePooling2D(
+        pool_size=(7, 7),
+        strides=(1, 1),
+        padding='valid'
+    )(block9)
+
+    dropout = K.layers.Dropout(0.4)(avg_pool)
+    output = K.layers.Dense(1000, activation='softmax')(dropout)
+
+    return K.models.Model(inputs=X, outputs=output)
