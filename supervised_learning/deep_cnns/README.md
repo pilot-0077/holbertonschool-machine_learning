@@ -72,6 +72,27 @@ The block contains:
 
 All convolutional layers use He normal initialization with a seed of 0.
 
+## Task 3 - Projection Block
+
+File: `3-projection_block.py`
+
+Implements a projection block based on the ResNet architecture.
+
+The main path contains:
+
+- 1x1 convolution with stride `s`
+- Batch normalization and ReLU activation
+- 3x3 convolution
+- Batch normalization and ReLU activation
+- 1x1 convolution
+- Batch normalization
+
+The shortcut path uses a 1x1 convolution with stride `s` followed by batch
+normalization so that its dimensions match the main path before addition.
+A final ReLU activation is applied after the two paths are added.
+
+All convolutional layers use He normal initialization with a seed of 0.
+
 ## Repository
 
 - GitHub repository: `holbertonschool-machine_learning`
