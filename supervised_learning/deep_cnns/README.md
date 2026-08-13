@@ -51,6 +51,27 @@ transformations inside a residual block.
 DenseNet connects each layer to all subsequent layers within a dense block,
 encouraging feature reuse and improving gradient flow.
 
+## Task 2 - Identity Block
+
+File: `2-identity_block.py`
+
+Implements an identity block based on the ResNet architecture.
+
+The block contains:
+
+- 1x1 convolution
+- Batch normalization
+- ReLU activation
+- 3x3 convolution
+- Batch normalization
+- ReLU activation
+- 1x1 convolution
+- Batch normalization
+- Identity shortcut connection
+- Final ReLU activation
+
+All convolutional layers use He normal initialization with a seed of 0.
+
 ## Repository
 
 - GitHub repository: `holbertonschool-machine_learning`
