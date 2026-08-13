@@ -93,6 +93,28 @@ A final ReLU activation is applied after the two paths are added.
 
 All convolutional layers use He normal initialization with a seed of 0.
 
+## Task 4 - ResNet-50
+
+File: `4-resnet50.py`
+
+Builds the ResNet-50 architecture for input images with shape
+`(224, 224, 3)` using the identity and projection blocks from the previous
+tasks.
+
+The network contains:
+
+- Initial 7x7 convolution with 64 filters and stride 2
+- Batch normalization and ReLU activation
+- 3x3 max pooling with stride 2
+- Stage 2: 1 projection block and 2 identity blocks
+- Stage 3: 1 projection block and 3 identity blocks
+- Stage 4: 1 projection block and 5 identity blocks
+- Stage 5: 1 projection block and 2 identity blocks
+- 7x7 average pooling
+- 1000-unit softmax output layer
+
+Weights use He normal initialization with a seed of 0.
+
 ## Repository
 
 - GitHub repository: `holbertonschool-machine_learning`
