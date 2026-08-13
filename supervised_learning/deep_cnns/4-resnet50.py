@@ -1,69 +1,70 @@
 #!/usr/bin/env python3
-"""Script to create an inception block"""
+"""Builds the ResNet-50 architecture using Keras."""
 
-import tensorflow.keras as K
+from tensorflow import keras as K
 
 identity_block = __import__('2-identity_block').identity_block
 projection_block = __import__('3-projection_block').projection_block
 
 
 def resnet50():
-    """
+    """Build the ResNet-50 architecture.
 
     Returns:
-
+        A Keras model implementing ResNet-50.
     """
     X = K.Input(shape=(224, 224, 3))
-    init = K.initializers.he_normal()
 
-    conv1 = K.layers.Conv2D(filters=64, kernel_size=7, padding='same',
-                            strides=2, kernel_initializer=init)(X)
-
-    batch1 = K.layers.BatchNormalization()(conv1)
-
+    conv1 = K.layers.Conv2D(
+        filters=64,
+        kernel_size=(7, 7),
+        strides=(2, 2),
+        padding='same',
+        kernel_initializer=K.initializers.he_normal(seed=0)
+    )(X)
+    batch1 = K.layers.BatchNormalization(axis=3)(conv1)
     relu1 = K.layers.Activation('relu')(batch1)
 
-    pool_1 = K.layers.MaxPool2D(pool_size=3, strides=2, padding='same')(relu1)
+    pool1 = K.layers.MaxPooling2D(
+        pool_size=(3, 3),
+        strides=(2, 2),
+        padding='same'
+    )(relu1)
 
-    # first projection block
-    prjconv1 = projection_block(pool_1, [64, 64, 256], 1)
+    # Stage 2
+    A = projection_block(pool1, [64, 64, 256], s=1)
+    A = identity_block(A, [64, 64, 256])
+    A = identity_block(A, [64, 64, 256])
 
-    # first identity blocks
-    idconv2_2 = identity_block(prjconv1, [64, 64, 256])
-    idconv2_3 = identity_block(idconv2_2, [64, 64, 256])
+    # Stage 3
+    A = projection_block(A, [128, 128, 512], s=2)
+    A = identity_block(A, [128, 128, 512])
+    A = identity_block(A, [128, 128, 512])
+    A = identity_block(A, [128, 128, 512])
 
-    # second projection block
-    prjconv2 = projection_block(idconv2_3, [128, 128, 512])
+    # Stage 4
+    A = projection_block(A, [256, 256, 1024], s=2)
+    A = identity_block(A, [256, 256, 1024])
+    A = identity_block(A, [256, 256, 1024])
+    A = identity_block(A, [256, 256, 1024])
+    A = identity_block(A, [256, 256, 1024])
+    A = identity_block(A, [256, 256, 1024])
 
-    # second identity blocks
-    idconv3_1 = identity_block(prjconv2, [128, 128, 512])
-    idconv3_2 = identity_block(idconv3_1, [128, 128, 512])
-    idconv3_3 = identity_block(idconv3_2, [128, 128, 512])
+    # Stage 5
+    A = projection_block(A, [512, 512, 2048], s=2)
+    A = identity_block(A, [512, 512, 2048])
+    A = identity_block(A, [512, 512, 2048])
 
-    # third projection block
-    prjconv3 = projection_block(idconv3_3, [256, 256, 1024])
+    avg_pool = K.layers.AveragePooling2D(
+        pool_size=(7, 7),
+        strides=(1, 1),
+        padding='valid'
+    )(A)
 
-    # third identity blocks
-    idconv4_1 = identity_block(prjconv3, [256, 256, 1024])
-    idconv4_2 = identity_block(idconv4_1, [256, 256, 1024])
-    idconv4_3 = identity_block(idconv4_2, [256, 256, 1024])
-    idconv4_4 = identity_block(idconv4_3, [256, 256, 1024])
-    idconv4_5 = identity_block(idconv4_4, [256, 256, 1024])
+    output = K.layers.Dense(
+        units=1000,
+        activation='softmax',
+        kernel_initializer=K.initializers.he_normal(seed=0)
+    )(avg_pool)
 
-    # fourth projection block
-    prjconv4 = projection_block(idconv4_5, [512, 512, 2048])
-
-    # fourth identity blocks
-    idconv5_1 = identity_block(prjconv4, [512, 512, 2048])
-    idconv5_2 = identity_block(idconv5_1, [512, 512, 2048])
-
-    # average pool
-    avg_pool = K.layers.AveragePooling2D(pool_size=7,
-                                         padding='same')(idconv5_2)
-
-    FC = K.layers.Dense(1000, activation='softmax',
-                        kernel_initializer=init)(avg_pool)
-
-    model = K.models.Model(inputs=X, outputs=FC)
-
-    return model
+    return K.models.Model(inputs=X, outputs=output)
