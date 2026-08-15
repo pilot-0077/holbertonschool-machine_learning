@@ -1,315 +1,270 @@
 #!/usr/bin/env python3
-"""Script to initialize YOLOv3"""
+"""Runs the complete YOLOv3 object detection pipeline."""
 
-import tensorflow.keras as K
-import numpy as np
-import cv2
-import glob
+from glob import glob
 import os
 
+import cv2
+import numpy as np
+from tensorflow import keras as K
 
-class Yolo():
-    """
-    Class YOLOv3
-    """
+
+class Yolo:
+    """Uses the YOLOv3 algorithm to perform object detection."""
+
     def __init__(self, model_path, classes_path, class_t, nms_t, anchors):
-        """
-        Method init for Yolov3
-        Args:
-            model_path: path to where a Darknet nperas model is stored
-            classes_path: path to where the list of class names used for
-                          the Darknet model, listed in order of index,
-                          can be found
-            class_t: the box score threshold for the initial filtering step
-            nms_t: the IOU threshold for non-max suppression
-            anchors: the anchor boxes
-        """
-        # Load model
+        """Initialize a YOLOv3 detector."""
         self.model = K.models.load_model(model_path)
-        # Load classes
-        with open(classes_path, 'r') as f:
-            self.class_names = [line.strip() for line in f]
+
+        with open(classes_path, 'r', encoding='utf-8') as classes_file:
+            self.class_names = [
+                class_name.strip()
+                for class_name in classes_file.readlines()
+            ]
+
         self.class_t = class_t
         self.nms_t = nms_t
         self.anchors = anchors
 
-    def sigmoid(self, x):
-        """ sigmoid function"""
+    @staticmethod
+    def sigmoid(x):
+        """Apply the sigmoid function to x."""
         return 1 / (1 + np.exp(-x))
 
     def process_outputs(self, outputs, image_size):
-        """
-        Method containing the predictions from the darknet_model
-        Args:
-            outputs: list of numpy.ndarrays containing the predictions from
-                     the Darknet model for a single image:
-                     (grid_height, grid_width, anchor_boxes, 4 + 1 + classes)
-            image_size: numpy.ndarray containing the image’s original size
-                        [image_height, image_width]
-        Returns: (boxes, box_confidences, box_class_probs)
-        """
-        boxes = [pred[:, :, :, 0:4] for pred in outputs]
-        for ipred, pred in enumerate(boxes):
-            for grid_h in range(pred.shape[0]):
-                for grid_w in range(pred.shape[1]):
-                    bx = ((self.sigmoid(pred[grid_h,
-                                        grid_w, :,
-                                        0]) + grid_w) / pred.shape[1])
-                    by = ((self.sigmoid(pred[grid_h,
-                                        grid_w, :,
-                                        1]) + grid_h) / pred.shape[0])
-                    anchor_tensor = self.anchors[ipred].astype(float)
-                    anchor_tensor[:, 0] *= \
-                        np.exp(pred[grid_h, grid_w, :,
-                               2]) / self.model.input.shape[1].value  # bw
-                    anchor_tensor[:, 1] *= \
-                        np.exp(pred[grid_h, grid_w, :,
-                               3]) / self.model.input.shape[2].value  # bh
+        """Process raw Darknet outputs into image-relative boxes."""
+        boxes = []
+        box_confidences = []
+        box_class_probs = []
 
-                    pred[grid_h, grid_w, :, 0] = \
-                        (bx - (anchor_tensor[:, 0] / 2)) * \
-                        image_size[1]  # x1
-                    pred[grid_h, grid_w, :, 1] = \
-                        (by - (anchor_tensor[:, 1] / 2)) * \
-                        image_size[0]  # y1
-                    pred[grid_h, grid_w, :, 2] = \
-                        (bx + (anchor_tensor[:, 0] / 2)) * \
-                        image_size[1]  # x2
-                    pred[grid_h, grid_w, :, 3] = \
-                        (by + (anchor_tensor[:, 1] / 2)) * \
-                        image_size[0]  # y2
-        # box confidence
+        image_height, image_width = image_size
+        model_dim_1 = int(self.model.input_shape[1])
+        model_dim_2 = int(self.model.input_shape[2])
 
-        box_confidences = [self.sigmoid(pred[:, :, :,
-                                        4:5]) for pred in outputs]
+        for output_index, output in enumerate(outputs):
+            grid_height, grid_width, anchor_boxes = output.shape[:3]
 
-        # box class probs
-        box_class_probs = [self.sigmoid(pred[:, :, :,
-                                        5:]) for pred in outputs]
+            grid_x = np.arange(grid_width).reshape(1, grid_width, 1)
+            grid_y = np.arange(grid_height).reshape(grid_height, 1, 1)
+
+            box_x = (
+                self.sigmoid(output[..., 0]) + grid_x
+            ) / grid_width
+            box_y = (
+                self.sigmoid(output[..., 1]) + grid_y
+            ) / grid_height
+
+            anchors = self.anchors[output_index].astype(float)
+            anchor_widths = anchors[:, 0].reshape(1, 1, anchor_boxes)
+            anchor_heights = anchors[:, 1].reshape(1, 1, anchor_boxes)
+
+            box_width = (
+                np.exp(output[..., 2]) * anchor_widths / model_dim_1
+            )
+            box_height = (
+                np.exp(output[..., 3]) * anchor_heights / model_dim_2
+            )
+
+            processed_boxes = np.empty_like(output[..., :4], dtype=float)
+            processed_boxes[..., 0] = (
+                box_x - box_width / 2
+            ) * image_width
+            processed_boxes[..., 1] = (
+                box_y - box_height / 2
+            ) * image_height
+            processed_boxes[..., 2] = (
+                box_x + box_width / 2
+            ) * image_width
+            processed_boxes[..., 3] = (
+                box_y + box_height / 2
+            ) * image_height
+
+            boxes.append(processed_boxes)
+            box_confidences.append(self.sigmoid(output[..., 4:5]))
+            box_class_probs.append(self.sigmoid(output[..., 5:]))
+
         return boxes, box_confidences, box_class_probs
 
     def filter_boxes(self, boxes, box_confidences, box_class_probs):
-        """
-        Function that filter boxes
-        Args:
-            boxes: List of numpy.ndarrays of shape (grid_height, grid_width,
-                   anchor_boxes, 4) containing the processed boundary boxes
-                   for each output, respectively
-            box_confidences: list of numpy.ndarrays of shape (grid_height,
-                             grid_width, anchor_boxes, 1) containing the
-                             processed box confidences for each output,
-                             respectively
-            box_class_probs: list of numpy.ndarrays of shape (grid_height,
-                             grid_width, anchor_boxes, classes) containing
-                             the processed box class probabilities for each
-                             output, respectively
-        Returns: Tuple of (filtered_boxes, box_classes, box_scores)
-        """
-        box_score = []
-        bc = box_confidences
-        bcp = box_class_probs
+        """Filter boxes whose highest class score is below class_t."""
+        filtered_boxes = []
+        box_classes = []
+        box_scores = []
 
-        for box_conf, box_probs in zip(bc, bcp):
-            score = (box_conf * box_probs)
-            box_score.append(score)
-        # Finding the index of the class with maximum box score
-        box_classes = [s.argmax(axis=-1) for s in box_score]
-        box_class_l = [b.reshape(-1) for b in box_classes]
-        box_classes = np.concatenate(box_class_l)
+        for box, confidence, class_probs in zip(
+                boxes, box_confidences, box_class_probs):
+            scores = confidence * class_probs
+            classes = np.argmax(scores, axis=-1)
+            scores = np.max(scores, axis=-1)
+            mask = scores >= self.class_t
 
-        # Getting the corresponding box score
-        box_class_scores = [s.max(axis=-1) for s in box_score]
-        b_scores_l = [b.reshape(-1) for b in box_class_scores]
-        box_class_scores = np.concatenate(b_scores_l)
+            filtered_boxes.append(box[mask])
+            box_classes.append(classes[mask])
+            box_scores.append(scores[mask])
 
-        # Filter mask (pc >= threshold)
-        mask = np.where(box_class_scores >= self.class_t)
+        filtered_boxes = np.concatenate(filtered_boxes, axis=0)
+        box_classes = np.concatenate(box_classes, axis=0)
+        box_scores = np.concatenate(box_scores, axis=0)
 
-        # Filtered all unbounding boxes
-        boxes_all = [b.reshape(-1, 4) for b in boxes]
-        boxes_all = np.concatenate(boxes_all)
-
-        # Applying the mask to scores, boxes and classes
-        scores = box_class_scores[mask]
-        boxes = boxes_all[mask]
-        classes = box_classes[mask]
-
-        return boxes, classes, scores
+        return filtered_boxes, box_classes, box_scores
 
     def non_max_suppression(self, filtered_boxes, box_classes, box_scores):
-        """
-        Max suppression function
-        Args:
-            filtered_boxes: numpy.ndarray of shape (?, 4) containing
-                            all of the filtered bounding boxes:
-            box_classes: numpy.ndarray of shape (?,) containing the
-                         class number for the class that filtered_boxes
-                         predicts, respectively
-            box_scores: numpy.ndarray of shape (?) containing the box scores
-                        for each box in filtered_boxes, respectively
-        Returns: box_predictions, predicted_box_classes, predicted_box_scores
-        """
-        f = []
-        c = []
-        s = []
+        """Apply class-wise non-max suppression to filtered detections."""
+        box_predictions = []
+        predicted_box_classes = []
+        predicted_box_scores = []
 
-        for i in(np.unique(box_classes)):
+        for box_class in np.unique(box_classes):
+            mask = box_classes == box_class
+            class_boxes = filtered_boxes[mask]
+            class_scores = box_scores[mask]
 
-            idx = np.where(box_classes == i)
-            filters = filtered_boxes[idx]
-            scores = box_scores[idx]
-            classes = box_classes[idx]
-            keep = self.nms(filters, self.nms_t, scores)
+            order = np.argsort(class_scores)[::-1]
+            class_boxes = class_boxes[order]
+            class_scores = class_scores[order]
 
-            filters = filters[keep]
-            scores = scores[keep]
-            classes = classes[keep]
+            while class_boxes.shape[0] > 0:
+                best_box = class_boxes[0]
+                best_score = class_scores[0]
 
-            f.append(filters)
-            c.append(classes)
-            s.append(scores)
+                box_predictions.append(best_box)
+                predicted_box_classes.append(box_class)
+                predicted_box_scores.append(best_score)
 
-        filtered_boxes = np.concatenate(f, axis=0)
-        box_scores = np.concatenate(c, axis=0)
-        box_classes = np.concatenate(s, axis=0)
+                if class_boxes.shape[0] == 1:
+                    break
 
-        return filtered_boxes, box_scores, box_classes
+                x1 = np.maximum(best_box[0], class_boxes[1:, 0])
+                y1 = np.maximum(best_box[1], class_boxes[1:, 1])
+                x2 = np.minimum(best_box[2], class_boxes[1:, 2])
+                y2 = np.minimum(best_box[3], class_boxes[1:, 3])
 
-    def nms(self, bc, thresh, scores):
-        """
-        Function that computes the index
-        Args:
-            bc: Box coordinates
-            thresh: Threeshold
-            scores: scores for each box indexed and sorted
-        Returns: Sorted index score for non max supression
-        """
-        x1 = bc[:, 0]
-        y1 = bc[:, 1]
-        x2 = bc[:, 2]
-        y2 = bc[:, 3]
+                intersection = (
+                    np.maximum(0, x2 - x1) *
+                    np.maximum(0, y2 - y1)
+                )
+                best_area = (
+                    (best_box[2] - best_box[0]) *
+                    (best_box[3] - best_box[1])
+                )
+                other_areas = (
+                    (class_boxes[1:, 2] - class_boxes[1:, 0]) *
+                    (class_boxes[1:, 3] - class_boxes[1:, 1])
+                )
+                union = best_area + other_areas - intersection
+                iou = intersection / union
+                keep = iou <= self.nms_t
 
-        areas = (x2 - x1 + 1) * (y2 - y1 + 1)
-        order = scores.argsort()[::-1]
+                class_boxes = class_boxes[1:][keep]
+                class_scores = class_scores[1:][keep]
 
-        keep = []
-        while order.size > 0:
-            i = order[0]
-            keep.append(i)
-            xx1 = np.maximum(x1[i], x1[order[1:]])
-            yy1 = np.maximum(y1[i], y1[order[1:]])
-            xx2 = np.minimum(x2[i], x2[order[1:]])
-            yy2 = np.minimum(y2[i], y2[order[1:]])
+        if not box_predictions:
+            return (
+                np.empty((0, 4)),
+                np.empty((0,), dtype=int),
+                np.empty((0,))
+            )
 
-            w = np.maximum(0.0, xx2 - xx1 + 1)
-            h = np.maximum(0.0, yy2 - yy1 + 1)
-            inter = w * h
-            ovr = inter / (areas[i] + areas[order[1:]] - inter)
-            inds = np.where(ovr <= thresh)[0]
-            order = order[inds + 1]
-        return keep
+        return (
+            np.array(box_predictions),
+            np.array(predicted_box_classes),
+            np.array(predicted_box_scores)
+        )
 
     @staticmethod
     def load_images(folder_path):
-        """
-        Function to load images using cv2
-        Args:
-            folder_path: String representing the path to the folder
-                         holding all the images to load
-        Returns: tuple of (images, image_paths)
-        """
-        images = []
-        images_paths = glob.glob(folder_path + '/*', recursive=False)
-        for i in images_paths:
-            image = cv2.imread(i)
-            images.append(image)
-        return images, images_paths
+        """Load all images from folder_path using OpenCV."""
+        image_paths = glob(folder_path + '/*')
+        images = [cv2.imread(image_path) for image_path in image_paths]
+        return images, image_paths
 
     def preprocess_images(self, images):
-        """
-        Function that preprocess the images
-        Args:
-            images:
-        Returns:
-        """
-        pimages = []
-        shapes = []
-        input_h = self.model.input.shape[2].value
-        input_w = self.model.input.shape[1].value
-        for i in images:
-            img_shape = i.shape[0], i.shape[1]
-            shapes.append(img_shape)
-            image = cv2.resize(i, (input_w, input_h),
-                               interpolation=cv2.INTER_CUBIC)
-            image = image / 255
-            pimages.append(image)
-        pimages = np.array(pimages)
-        image_shapes = np.array(shapes)
+        """Resize and rescale images for the Darknet model."""
+        input_width = int(self.model.input_shape[1])
+        input_height = int(self.model.input_shape[2])
 
-        return pimages, image_shapes
+        processed_images = []
+        image_shapes = []
 
-    def show_boxes(self, image, boxes, box_classes, box_scores,
-                   file_name):
-        """
-        Function to draw boxes
-        Args:
-            image: np.ndarray containing an unprocessed image
-            boxes: np.ndarray containing the boundary boxes
-                   for the image
-            box_classes: np.array  containing the class indices for
-                         each box
-            box_scores: np.array containing the box scores for each box
-            file_name: file path where the original image is stored
-        Returns: Image with all boundary boxes, class names, and box scores
-        """
+        for image in images:
+            image_shapes.append([image.shape[0], image.shape[1]])
+            resized = cv2.resize(
+                image,
+                (input_width, input_height),
+                interpolation=cv2.INTER_CUBIC
+            )
+            processed_images.append(resized / 255.0)
 
-        for i, box in enumerate(boxes):
-            x1 = int(box[0])
-            y1 = int(box[1])
-            start_point = int(box[0]), int(box[1])
-            end_point = int(box[2]), int(box[3])
-            scores = "{:.2f}".format(box_scores[i])
-            label = (self.class_names[box_classes[i]] + " " + scores)
-            oorg = (x1, y1 - 5)
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            scale = 0.5
-            text_color = (0, 0, 255)
-            thick = 1
-            line_Type = cv2.LINE_AA
-            image = cv2.rectangle(image, start_point, end_point,
-                                  (255, 0, 0), thickness=2)
-            print(image)
-            image = cv2.putText(image, label, oorg, font, scale, text_color,
-                                thick, line_Type, bottomLeftOrigin=False)
+        return np.array(processed_images), np.array(image_shapes)
+
+    def show_boxes(self, image, boxes, box_classes, box_scores, file_name):
+        """Display an image with predicted boxes, classes, and scores."""
+        for index, box in enumerate(boxes):
+            x1, y1, x2, y2 = box.astype(int)
+
+            cv2.rectangle(
+                image,
+                (x1, y1),
+                (x2, y2),
+                (255, 0, 0),
+                2
+            )
+
+            class_name = self.class_names[int(box_classes[index])]
+            label = '{} {:.2f}'.format(class_name, box_scores[index])
+
+            cv2.putText(
+                image,
+                label,
+                (x1, y1 - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 255),
+                1,
+                cv2.LINE_AA
+            )
+
         cv2.imshow(file_name, image)
+        key = cv2.waitKey(0)
 
-        k = cv2.waitKey(0)
-        if k == ord('s'):
-            if not os.path.exists('detections'):
-                os.makedirs('detections')
-            os.chdir('detections')
-            cv2.imwrite(file_name, image)
+        if key == ord('s'):
+            os.makedirs('detections', exist_ok=True)
+            save_path = os.path.join(
+                'detections',
+                os.path.basename(file_name)
+            )
+            cv2.imwrite(save_path, image)
+
         cv2.destroyAllWindows()
 
     def predict(self, folder_path):
-        """
-        Predict function
-        Args: folder_path: a string representing the path to the folder
-              holding all the images to predict
-        Returns: tuple of (predictions, image_paths)
-        """
-        predictions = []
+        """Run YOLOv3 detection on every image in folder_path."""
         images, image_paths = self.load_images(folder_path)
-        pimage, image_shape = self.preprocess_images(images)
-        output_image = self.model.predict(pimage)
+        processed_images, image_shapes = self.preprocess_images(images)
+        model_outputs = self.model.predict(processed_images)
 
-        for i, img in enumerate(images):
-            outputs = [out[i] for out in output_image]
-            bx, bclass, bscore = self.process_outputs(outputs, image_shape[i])
-            bx, bclass, bscore = self.filter_boxes(bx, bclass, bscore)
-            bx, bclass, bscore = self.non_max_suppression(bx, bclass,
-                                                          bscore)
-            predictions.append((bx, bclass, bscore))
-            name = image_paths[i].split("/")[-1]
-            self.show_boxes(img, bx, bclass, bscore, name)
+        predictions = []
+
+        for index, image in enumerate(images):
+            outputs = [output[index] for output in model_outputs]
+
+            boxes, confidences, class_probs = self.process_outputs(
+                outputs,
+                image_shapes[index]
+            )
+            boxes, classes, scores = self.filter_boxes(
+                boxes,
+                confidences,
+                class_probs
+            )
+            boxes, classes, scores = self.non_max_suppression(
+                boxes,
+                classes,
+                scores
+            )
+
+            predictions.append((boxes, classes, scores))
+            file_name = os.path.basename(image_paths[index])
+            self.show_boxes(image, boxes, classes, scores, file_name)
+
         return predictions, image_paths
