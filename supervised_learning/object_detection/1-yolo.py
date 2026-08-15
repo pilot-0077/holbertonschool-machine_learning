@@ -1,86 +1,100 @@
 #!/usr/bin/env python3
-"""Script to initialize YOLOv3"""
+"""Processes YOLOv3 model outputs for object detection."""
 
-import tensorflow.keras as K
 import numpy as np
+from tensorflow import keras as K
 
 
-class Yolo():
-    """
-    Class YOLOv3
-    """
+class Yolo:
+    """Uses the YOLOv3 algorithm to perform object detection."""
+
     def __init__(self, model_path, classes_path, class_t, nms_t, anchors):
-        """
-        Method init for Yolov3
+        """Initialize a YOLOv3 detector.
+
         Args:
-            model_path: path to where a Darknet nperas model is stored
-            classes_path: path to where the list of class names used for
-                          the Darknet model, listed in order of index,
-                          can be found
-            class_t: the box score threshold for the initial filtering step
-            nms_t: the IOU threshold for non-max suppression
-            anchors: the anchor boxes
+            model_path: Path to the stored Darknet Keras model.
+            classes_path: Path to the file containing class names.
+            class_t: Box score threshold for initial filtering.
+            nms_t: IOU threshold for non-max suppression.
+            anchors: NumPy array containing the anchor boxes.
         """
-        # Load model
         self.model = K.models.load_model(model_path)
-        # Load classes
-        with open(classes_path, 'r') as f:
-            self.class_names = [line.strip() for line in f]
+
+        with open(classes_path, 'r', encoding='utf-8') as classes_file:
+            self.class_names = [
+                class_name.strip()
+                for class_name in classes_file.readlines()
+            ]
+
         self.class_t = class_t
         self.nms_t = nms_t
         self.anchors = anchors
 
-    def sigmoid(self, x):
-        """ sigmoid function"""
+    @staticmethod
+    def sigmoid(x):
+        """Apply the sigmoid function to x."""
         return 1 / (1 + np.exp(-x))
 
     def process_outputs(self, outputs, image_size):
-        """
-        Method containing the predictions from the darknet_model
+        """Process the raw predictions produced by the Darknet model.
+
         Args:
-            outputs: list of numpy.ndarrays containing the predictions from
-                     the Darknet model for a single image:
-                     (grid_height, grid_width, anchor_boxes, 4 + 1 + classes)
-            image_size: numpy.ndarray containing the image’s original size
-                        [image_height, image_width]
-        Returns: (boxes, box_confidences, box_class_probs)
+            outputs: List of NumPy arrays containing model predictions.
+            image_size: NumPy array containing the original image size as
+                [image_height, image_width].
+
+        Returns:
+            A tuple containing boxes, box confidences, and class
+            probabilities for each model output.
         """
-        boxes = [pred[:, :, :, 0:4] for pred in outputs]
-        for ipred, pred in enumerate(boxes):
-            for grid_h in range(pred.shape[0]):
-                for grid_w in range(pred.shape[1]):
-                    bx = ((self.sigmoid(pred[grid_h,
-                                        grid_w, :,
-                                        0]) + grid_w) / pred.shape[1])
-                    by = ((self.sigmoid(pred[grid_h,
-                                        grid_w, :,
-                                        1]) + grid_h) / pred.shape[0])
-                    anchor_tensor = self.anchors[ipred].astype(float)
-                    anchor_tensor[:, 0] *= \
-                        np.exp(pred[grid_h, grid_w, :,
-                               2]) / self.model.input.shape[1].value  # bw
-                    anchor_tensor[:, 1] *= \
-                        np.exp(pred[grid_h, grid_w, :,
-                               3]) / self.model.input.shape[2].value  # bh
+        boxes = []
+        box_confidences = []
+        box_class_probs = []
 
-                    pred[grid_h, grid_w, :, 0] = \
-                        (bx - (anchor_tensor[:, 0] / 2)) * \
-                        image_size[1]  # x1
-                    pred[grid_h, grid_w, :, 1] = \
-                        (by - (anchor_tensor[:, 1] / 2)) * \
-                        image_size[0]  # y1
-                    pred[grid_h, grid_w, :, 2] = \
-                        (bx + (anchor_tensor[:, 0] / 2)) * \
-                        image_size[1]  # x2
-                    pred[grid_h, grid_w, :, 3] = \
-                        (by + (anchor_tensor[:, 1] / 2)) * \
-                        image_size[0]  # y2
-        # box confidence
+        image_height, image_width = image_size
+        input_height = int(self.model.input_shape[1])
+        input_width = int(self.model.input_shape[2])
 
-        box_confidences = [self.sigmoid(pred[:, :, :,
-                                        4:5]) for pred in outputs]
+        for output_index, output in enumerate(outputs):
+            grid_height, grid_width, anchor_boxes = output.shape[:3]
 
-        # box class probs
-        box_class_probs = [self.sigmoid(pred[:, :, :,
-                                        5:]) for pred in outputs]
+            grid_x = np.arange(grid_width).reshape(1, grid_width, 1)
+            grid_y = np.arange(grid_height).reshape(grid_height, 1, 1)
+
+            box_x = (
+                self.sigmoid(output[..., 0]) + grid_x
+            ) / grid_width
+            box_y = (
+                self.sigmoid(output[..., 1]) + grid_y
+            ) / grid_height
+
+            anchors = self.anchors[output_index].astype(float)
+            anchor_widths = anchors[:, 0].reshape(1, 1, anchor_boxes)
+            anchor_heights = anchors[:, 1].reshape(1, 1, anchor_boxes)
+
+            box_width = (
+                np.exp(output[..., 2]) * anchor_widths / input_width
+            )
+            box_height = (
+                np.exp(output[..., 3]) * anchor_heights / input_height
+            )
+
+            processed_boxes = np.empty_like(output[..., :4], dtype=float)
+            processed_boxes[..., 0] = (
+                box_x - box_width / 2
+            ) * image_width
+            processed_boxes[..., 1] = (
+                box_y - box_height / 2
+            ) * image_height
+            processed_boxes[..., 2] = (
+                box_x + box_width / 2
+            ) * image_width
+            processed_boxes[..., 3] = (
+                box_y + box_height / 2
+            ) * image_height
+
+            boxes.append(processed_boxes)
+            box_confidences.append(self.sigmoid(output[..., 4:5]))
+            box_class_probs.append(self.sigmoid(output[..., 5:]))
+
         return boxes, box_confidences, box_class_probs
