@@ -39,6 +39,20 @@ The class exposes the following public attributes:
 - `nms_t`
 - `anchors`
 
+## Task 1 - Process Outputs
+
+File: `1-yolo.py`
+
+Adds `process_outputs`, which converts the raw YOLOv3 predictions into:
+
+- Bounding boxes in `(x1, y1, x2, y2)` format relative to the original image
+- Box confidence scores
+- Class probability scores
+
+The method applies the YOLO sigmoid transformations, uses the anchor boxes to
+recover box dimensions, scales the boxes to the original image size, and
+supports different model input and output grid sizes.
+
 ## Repository
 
 - GitHub repository: `holbertonschool-machine_learning`
