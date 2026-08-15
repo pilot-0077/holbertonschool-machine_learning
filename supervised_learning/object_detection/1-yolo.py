@@ -36,7 +36,7 @@ class Yolo:
         return 1 / (1 + np.exp(-x))
 
     def process_outputs(self, outputs, image_size):
-        """Process the raw predictions produced by the Darknet model.
+        """Process raw predictions produced by the Darknet model.
 
         Args:
             outputs: List of NumPy arrays containing model predictions.
@@ -52,8 +52,8 @@ class Yolo:
         box_class_probs = []
 
         image_height, image_width = image_size
-        input_height = int(self.model.input_shape[1])
-        input_width = int(self.model.input_shape[2])
+        model_dim_1 = int(self.model.input_shape[1])
+        model_dim_2 = int(self.model.input_shape[2])
 
         for output_index, output in enumerate(outputs):
             grid_height, grid_width, anchor_boxes = output.shape[:3]
@@ -73,10 +73,10 @@ class Yolo:
             anchor_heights = anchors[:, 1].reshape(1, 1, anchor_boxes)
 
             box_width = (
-                np.exp(output[..., 2]) * anchor_widths / input_width
+                np.exp(output[..., 2]) * anchor_widths / model_dim_1
             )
             box_height = (
-                np.exp(output[..., 3]) * anchor_heights / input_height
+                np.exp(output[..., 3]) * anchor_heights / model_dim_2
             )
 
             processed_boxes = np.empty_like(output[..., :4], dtype=float)
