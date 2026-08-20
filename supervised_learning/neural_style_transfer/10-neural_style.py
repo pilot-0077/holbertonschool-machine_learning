@@ -295,11 +295,6 @@ class NST:
             costs = self.compute_grads(generated_image)
             gradients, j_total, j_content, j_style, j_var = costs
 
-            optimizer.apply_gradients([(gradients, generated_image)])
-            generated_image.assign(
-                tf.clip_by_value(generated_image, 0, 1)
-            )
-
             if float(j_total) < float(best_cost):
                 best_cost = j_total
                 best_image = generated_image.numpy().copy()
@@ -310,6 +305,12 @@ class NST:
                     "var {}".format(
                         i, j_total, j_content, j_style, j_var
                     )
+                )
+
+            if i != iterations:
+                optimizer.apply_gradients([(gradients, generated_image)])
+                generated_image.assign(
+                    tf.clip_by_value(generated_image, 0, 1)
                 )
 
         if isinstance(best_cost, (tf.Tensor, tf.Variable)):
