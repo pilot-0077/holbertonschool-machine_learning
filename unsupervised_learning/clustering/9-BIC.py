@@ -35,7 +35,7 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5, verbose=False):
           or kmax <= 0):
         return None, None, None, None
 
-    if kmax < kmin or kmin > n or kmax > n:
+    if kmax <= kmin or kmin > n or kmax > n:
         return None, None, None, None
 
     if (not isinstance(iterations, int) or isinstance(iterations, bool)
