@@ -61,7 +61,8 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5, verbose=False):
         except (ValueError, np.linalg.LinAlgError, FloatingPointError):
             return None, None, None, None
 
-        if any(value is None for value in (pi, m, S, g, li)):
+        if (pi is None or m is None or S is None or
+                g is None or li is None):
             return None, None, None, None
 
         parameters = (
