@@ -53,22 +53,26 @@ def autoencoder(input_dims, hidden_layers, latent_dims):
 
     decoder = keras.Model(latent_inputs, outputs)
 
-    decoded = decoder(z)
+    encoded = encoder(inputs)
+    decoded = decoder(encoded[0])
     auto = keras.Model(inputs, decoded)
 
-    reconstruction_loss = keras.losses.binary_crossentropy(
+    reconstruction_loss = keras.backend.binary_crossentropy(
         inputs,
         decoded
     )
-    reconstruction_loss *= input_dims
+    reconstruction_loss = keras.backend.sum(
+        reconstruction_loss,
+        axis=1
+    )
 
     kl_loss = (
         1
-        + z_log_var
-        - keras.backend.square(z_mean)
-        - keras.backend.exp(z_log_var)
+        + encoded[2]
+        - keras.backend.square(encoded[1])
+        - keras.backend.exp(encoded[2])
     )
-    kl_loss = -0.5 * keras.backend.sum(kl_loss, axis=-1)
+    kl_loss = -0.5 * keras.backend.sum(kl_loss, axis=1)
 
     vae_loss = keras.backend.mean(reconstruction_loss + kl_loss)
     auto.add_loss(vae_loss)
