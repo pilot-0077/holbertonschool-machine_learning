@@ -1,42 +1,40 @@
 #!/usr/bin/env python3
-"""Simple recurrent neural network cell."""
+"""
+This module implements the RNNCell class for a simple Recurrent Neural Network.
+The class performs forward propagation through a single RNN cell.
+"""
 
 import numpy as np
 
 
 class RNNCell:
-    """Represent a single cell of a simple recurrent neural network."""
+    """
+    Represents a cell of a simple Recurrent Neural Network (RNN).
+    """
 
     def __init__(self, i, h, o):
-        """Initialize the RNN cell weights and biases.
-
-        Args:
-            i: Dimensionality of the input data.
-            h: Dimensionality of the hidden state.
-            o: Dimensionality of the output.
         """
-        self.Wh = np.random.randn(h + i, h)
+        Initialize the RNNCell with given dimensions for input, hidden state,
+        and output.
+        """
+        self.Wh = np.random.randn(i + h, h)
         self.Wy = np.random.randn(h, o)
         self.bh = np.zeros((1, h))
         self.by = np.zeros((1, o))
 
     def forward(self, h_prev, x_t):
-        """Perform forward propagation for one time step.
-
-        Args:
-            h_prev: Previous hidden state of shape (m, h).
-            x_t: Input data for the current time step of shape (m, i).
-
-        Returns:
-            h_next: Next hidden state.
-            y: Softmax output of the cell.
         """
-        concat = np.concatenate((h_prev, x_t), axis=1)
-        h_next = np.tanh(np.matmul(concat, self.Wh) + self.bh)
-
-        logits = np.matmul(h_next, self.Wy) + self.by
-        logits -= np.max(logits, axis=1, keepdims=True)
-        exp_logits = np.exp(logits)
-        y = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
-
+        Performs forward propagation for one time step.
+        """
+        concatenated = np.concatenate((h_prev, x_t), axis=1)
+        h_next = np.tanh(np.dot(concatenated, self.Wh) + self.bh)
+        y = self.softmax(np.dot(h_next, self.Wy) + self.by)
         return h_next, y
+
+    @staticmethod
+    def softmax(x):
+        """
+        Applies the softmax activation function.
+        """
+        exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+        return exp_x / exp_x.sum(axis=1, keepdims=True)
