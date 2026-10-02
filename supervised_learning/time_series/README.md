@@ -1,27 +1,81 @@
-# Time Series
+# Time Series Forecasting
 
-This project focuses on analyzing and modeling data that is ordered over time.
-It introduces the main ideas needed to prepare sequential observations and use
-them for forecasting and prediction tasks.
+This project focuses on forecasting data that is ordered over time using
+recurrent neural networks and TensorFlow data pipelines.
 
 ## Learning Objectives
 
 By the end of this project, I should be able to explain:
 
-- What a time series is
-- How time-dependent data differs from ordinary tabular data
-- What trends, seasonality, and noise are
-- How to prepare time series data for machine learning
-- How sliding windows can be used to create training examples
-- How recurrent and deep learning models can be applied to forecasting
-- How to evaluate predictions on sequential data
+- What time series forecasting is
+- What a stationary process is
+- What a sliding window is
+- How to preprocess time series data
+- How to create a TensorFlow data pipeline for time series data
+- How to perform time series forecasting with RNNs in TensorFlow
 
-## Core Concepts
+## Task 0 - When to Invest
 
-Time series models must preserve the temporal order of observations. Data is
-usually transformed into input windows and future targets so that a model can
-learn relationships between past values and later outcomes. Proper splitting
-and evaluation are important because future data must not leak into training.
+The goal is to forecast the Bitcoin closing price for the following hour
+using the previous 24 hours of market data.
+
+The raw Coinbase and Bitstamp datasets contain one-minute observations with:
+
+- Unix timestamp
+- Open, high, low, and close prices
+- BTC transaction volume
+- Currency transaction volume
+- Volume-weighted average price
+
+### `preprocess_data.py`
+
+The preprocessing script:
+
+- loads one or both raw exchange CSV files
+- aggregates one-minute observations into hourly OHLCV data
+- handles missing hourly intervals
+- combines Coinbase and Bitstamp data when both are supplied
+- keeps the useful market features
+- performs a chronological train/validation split
+- normalizes data using training statistics only
+- saves the processed arrays to `btc_hourly.npz`
+
+Example:
+
+```bash
+./preprocess_data.py bitstampUSD_1-min_data.csv \
+    coinbaseUSD_1-min_data.csv
+```
+
+If no paths are supplied, the script searches the current directory for
+common Coinbase and Bitstamp one-minute CSV filenames.
+
+### `forecast_btc.py`
+
+The forecasting script:
+
+- loads `btc_hourly.npz`
+- creates 24-hour sliding windows
+- feeds the windows through a `tf.data.Dataset`
+- trains a stacked GRU model
+- uses mean-squared error as the loss function
+- validates on chronologically later data
+- saves the best model as `btc_forecaster.keras`
+
+Run it with:
+
+```bash
+./forecast_btc.py
+```
+
+Optional arguments include `--epochs`, `--batch-size`, `--data`, and
+`--model`.
+
+## Files
+
+- `README.md`
+- `preprocess_data.py`
+- `forecast_btc.py`
 
 ## Repository
 
