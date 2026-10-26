@@ -21,6 +21,8 @@ The project is an educational experiment. It does not promise accurate forecasts
 - `score_news.py`: creates baseline sentiment scores from timestamped headlines
 - `requirements.txt`: Python dependencies
 - `NEWS_DATA_GUIDE.md`: format and precautions for optional news data
+- `run_market_experiment.ps1`: Windows helper to run the market-only experiment
+- `BLOG_POST_DRAFT.md` and `bitcoin_forecasting_cover.svg`: blog draft and cover image
 
 ## 1. Set up the environment
 
