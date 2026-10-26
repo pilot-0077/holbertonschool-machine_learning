@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Can We Forecast Bitcoin Prices?</title>
+  <desc id="desc">A dark navy Bitcoin forecasting blog cover with a gold Bitcoin coin, a market chart, and a simple time-series pipeline.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#06111f"/>
+      <stop offset="55%" stop-color="#0a2340"/>
+      <stop offset="100%" stop-color="#020811"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff0a6"/>
+      <stop offset="45%" stop-color="#f8b938"/>
+      <stop offset="100%" stop-color="#b96a12"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2b8cff"/>
+      <stop offset="100%" stop-color="#43d7e8"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g stroke="#1c456b" stroke-width="1" opacity="0.42">
+    <path d="M0 100H1200 M0 170H1200 M0 240H1200 M0 310H1200 M0 380H1200 M0 450H1200 M0 520H1200"/>
+    <path d="M100 0V630 M200 0V630 M300 0V630 M400 0V630 M500 0V630 M600 0V630 M700 0V630 M800 0V630 M900 0V630 M1000 0V630 M1100 0V630"/>
+  </g>
+  <path d="M560 300 L600 270 L630 310 L670 230 L710 260 L745 185 L780 220 L815 165 L850 200 L890 130 L930 160 L965 105 L1005 140 L1040 80 L1080 100 L1120 55"
+        fill="none" stroke="url(#blue)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path d="M560 300 L600 270 L630 310 L670 230 L710 260 L745 185 L780 220 L815 165 L850 200 L890 130 L930 160 L965 105 L1005 140 L1040 80 L1080 100 L1120 55 L1120 360 L560 360Z"
+        fill="#168bd8" opacity="0.08"/>
+  <g transform="translate(930 320)">
+    <circle r="145" fill="#f2a900" opacity="0.12" filter="url(#glow)"/>
+    <circle r="126" fill="#09121c" stroke="url(#gold)" stroke-width="10"/>
+    <circle r="108" fill="none" stroke="#d98c20" stroke-width="2" stroke-dasharray="5 7"/>
+    <circle r="92" fill="none" stroke="#f8c75b" stroke-width="2" opacity="0.65"/>
+    <text x="0" y="42" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="150" font-weight="700" fill="url(#gold)">₿</text>
+  </g>
+  <text x="70" y="125" font-family="Arial, Helvetica, sans-serif" font-size="27" letter-spacing="5" fill="#6ad8f4">TIME SERIES FORECASTING</text>
+  <text x="66" y="218" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="700" fill="#ffffff">Can We Forecast</text>
+  <text x="66" y="292" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" fill="url(#gold)">Bitcoin Prices?</text>
+  <text x="70" y="350" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#d7e8f7">From historical market data to next-hour predictions</text>
+  <g transform="translate(68 465)" font-family="Arial, Helvetica, sans-serif">
+    <rect width="1064" height="108" rx="18" fill="#06101d" stroke="#25557b" stroke-width="2" opacity="0.95"/>
+    <g fill="#f8c75b" font-size="18" font-weight="700">
+      <text x="34" y="39">RAW DATA</text>
+      <text x="246" y="39">PREPROCESSING</text>
+      <text x="470" y="39">24-HOUR WINDOW</text>
+      <text x="714" y="39">GRU MODEL</text>
+      <text x="916" y="39">EVALUATION</text>
+    </g>
+    <g fill="#d7e8f7" font-size="16">
+      <text x="34" y="69">OHLCV</text>
+      <text x="246" y="69">Hourly + scaled</text>
+      <text x="470" y="69">Past → next hour</text>
+      <text x="714" y="69">TensorFlow</text>
+      <text x="916" y="69">Test vs baseline</text>
+    </g>
+    <g stroke="url(#blue)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M145 54H210 l-9 -8 m9 8 l-9 8"/>
+      <path d="M385 54H435 l-9 -8 m9 8 l-9 8"/>
+      <path d="M620 54H680 l-9 -8 m9 8 l-9 8"/>
+      <path d="M830 54H890 l-9 -8 m9 8 l-9 8"/>
+    </g>
+  </g>
+</svg>
