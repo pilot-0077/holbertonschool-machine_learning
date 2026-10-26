@@ -42,15 +42,17 @@ python -m pip install -r requirements.txt
 
 ## 2. Prepare market data
 
-Download the one-minute Bitcoin CSV file or files from Coinbase and/or Bitstamp. Each file must include the columns expected by the script, including `Timestamp`, `Open`, `High`, `Low`, `Close`, `Volume_(BTC)`, `Volume_(Currency)`, and `Weighted_Price`.
+Download one-minute Bitcoin data from Coinbase and/or Bitstamp. The script supports both the original Kaggle-style columns (such as `Timestamp`, `Volume_(BTC)`, and `Volume_(Currency)`) and simpler OHLCV CSVs with lowercase columns (`timestamp,open,high,low,close,volume`).
 
-Run preprocessing with the actual filenames you downloaded. For example:
+One public Bitstamp historical dataset is available in the [Bitstamp BTC/USD minute-data repository](https://github.com/ff137/bitstamp-btcusd-minute-data). Its historical file is compressed, so you can pass the `.csv.gz` file directly to pandas. The dataset repository documents the source and applicable data licence; retain the required attribution if you use or redistribute the data.
+
+Run preprocessing with the actual filename you downloaded. For example:
 
 ```bash
-python preprocess_data.py bitstampUSD_1-min_data.csv coinbaseUSD_1-min_data.csv --output btc_market_only.npz
+python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --output btc_market_only.npz
 ```
 
-If you have only one exchange file, pass only that filename.
+If you downloaded the original Kaggle files instead, pass the relevant filenames. If you have only one exchange file, pass only that filename.
 
 The script aggregates minute-level rows into hourly observations, handles missing values, combines the supplied exchange data, and scales features using statistics from the training portion only. The data is split chronologically:
 
