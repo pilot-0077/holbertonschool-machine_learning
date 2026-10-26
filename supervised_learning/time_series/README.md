@@ -18,6 +18,7 @@ The project is an educational experiment. It does not promise accurate forecasts
 
 - `preprocess_data.py`: prepares market data and optional news features
 - `forecast_btc.py`: trains the GRU model, evaluates it, and saves plots
+- `score_news.py`: creates baseline sentiment scores from timestamped headlines
 - `requirements.txt`: Python dependencies
 - `NEWS_DATA_GUIDE.md`: format and precautions for optional news data
 
@@ -82,14 +83,20 @@ These files are generated from the actual run. Use their measured metrics in any
 
 ## 4. Optional experiment: add news sentiment
 
-The code can also use a CSV containing a timestamp and a sentiment score for each news article. Read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) before creating the file. The sentiment scores must come from a real, documented source or a sentiment-analysis process, not invented example values.
-
-Example command:
+The code can also use news headlines if you have a CSV containing publication timestamps and headline text. First, score the headlines with the included VADER-based baseline:
 
 ```bash
-python preprocess_data.py bitstampUSD_1-min_data.csv coinbaseUSD_1-min_data.csv --news-file news_sentiment.csv --output btc_with_news.npz
+python score_news.py news_headlines.csv --output news_sentiment.csv
+```
+
+Then prepare and train the news-enhanced model:
+
+```bash
+python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --news-file news_sentiment.csv --output btc_with_news.npz
 python forecast_btc.py --data btc_with_news.npz --model models/btc_with_news.keras --plot-dir results/with_news --epochs 50 --batch-size 64
 ```
+
+Read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) for the required input columns and precautions. VADER is a general-purpose sentiment baseline, not a finance-specific model. Use real headlines with accurate publication times, and do not invent news data.
 
 Compare the two experiments using the same date range and split strategy:
 
