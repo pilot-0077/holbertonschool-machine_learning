@@ -12,6 +12,7 @@ TIMESTAMP_ALIASES = {
     "timestamp",
     "published_at",
     "publishedat",
+    "date_time",
     "date",
     "time",
 }
