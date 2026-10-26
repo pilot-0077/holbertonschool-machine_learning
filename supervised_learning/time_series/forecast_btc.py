@@ -36,7 +36,7 @@ def parse_arguments():
     parser.add_argument(
         "--plot-dir",
         default=PLOT_DIR,
-        help="Directory in which evaluation plots will be saved.",
+        help="Directory in which evaluation outputs will be saved.",
     )
     parser.add_argument(
         "--epochs",
@@ -60,6 +60,7 @@ def load_data(path):
             "features",
             "target",
             "train_end",
+            "validation_end",
             "target_mean",
             "target_std",
             "timestamps",
@@ -73,7 +74,6 @@ def load_data(path):
                     ", ".join(sorted(missing)),
                 )
             )
-
         return {key: archive[key] for key in archive.files}
 
 
@@ -128,7 +128,6 @@ def build_model(feature_count):
         ],
         name="btc_forecaster",
     )
-
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
         loss="mse",
@@ -153,7 +152,7 @@ def save_loss_plot(history, output_path):
 
 
 def save_prediction_plot(timestamps, actual, predicted, baseline, output_path):
-    """Save actual, model-predicted, and baseline prices for validation."""
+    """Save actual, predicted, and baseline prices for the test period."""
     dates = pd.to_datetime(timestamps, unit="s", utc=True)
 
     plt.figure(figsize=(12, 6))
@@ -168,7 +167,7 @@ def save_prediction_plot(timestamps, actual, predicted, baseline, output_path):
     )
     plt.xlabel("Time (UTC)")
     plt.ylabel("Bitcoin closing price (USD)")
-    plt.title("Actual vs Predicted Bitcoin Closing Prices")
+    plt.title("Actual vs Predicted Bitcoin Closing Prices (Test Set)")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -177,22 +176,18 @@ def save_prediction_plot(timestamps, actual, predicted, baseline, output_path):
 
 
 def main():
-    """Train the model, report metrics, and save evaluation plots."""
+    """Train on the train split, select on validation, and evaluate on test."""
     arguments = parse_arguments()
-
     if arguments.epochs < 1:
         raise ValueError("epochs must be positive.")
     if arguments.batch_size < 1:
         raise ValueError("batch-size must be positive.")
 
     tf.keras.utils.set_random_seed(0)
-
     data_path = Path(arguments.data)
     if not data_path.is_file():
         raise FileNotFoundError(
-            "{} not found. Run preprocess_data.py first.".format(
-                data_path
-            )
+            "{} not found. Run preprocess_data.py first.".format(data_path)
         )
 
     data = load_data(data_path)
@@ -201,6 +196,7 @@ def main():
     timestamps = np.asarray(data["timestamps"]).reshape(-1)
     feature_names = [str(name) for name in data["feature_names"]]
     train_end = int(data["train_end"])
+    validation_end = int(data["validation_end"])
 
     if features.ndim != 2:
         raise ValueError("features must be a two-dimensional array.")
@@ -212,8 +208,8 @@ def main():
         raise ValueError("The feature list must contain a Close column.")
     if train_end <= LOOKBACK_HOURS:
         raise ValueError("Training data is too short.")
-    if train_end >= len(features):
-        raise ValueError("Validation data is empty.")
+    if validation_end <= train_end or validation_end >= len(features):
+        raise ValueError("Validation or test split is empty.")
 
     close_index = feature_names.index("Close")
     train_dataset = make_dataset(
@@ -228,6 +224,14 @@ def main():
         features,
         target,
         train_end,
+        validation_end,
+        arguments.batch_size,
+        False,
+    )
+    test_dataset = make_dataset(
+        features,
+        target,
+        validation_end,
         len(features),
         arguments.batch_size,
         False,
@@ -262,20 +266,25 @@ def main():
         verbose=2,
     )
 
-    metrics = model.evaluate(
+    validation_metrics = model.evaluate(
         validation_dataset,
         return_dict=True,
         verbose=0,
     )
+    test_metrics = model.evaluate(
+        test_dataset,
+        return_dict=True,
+        verbose=0,
+    )
     predictions_scaled = model.predict(
-        validation_dataset,
+        test_dataset,
         verbose=0,
     ).reshape(-1)
-    actual_scaled = target[train_end:]
+    actual_scaled = target[validation_end:]
 
     if len(predictions_scaled) != len(actual_scaled):
         raise RuntimeError(
-            "Prediction count does not match the validation target count."
+            "Prediction count does not match the test target count."
         )
 
     target_mean = float(data["target_mean"])
@@ -283,40 +292,64 @@ def main():
     actual_usd = actual_scaled * target_std + target_mean
     predicted_usd = predictions_scaled * target_std + target_mean
 
-    # A simple baseline predicts that the next close equals the latest close.
+    # Baseline: predict that the next close equals the previous close.
     baseline_scaled = features[
-        train_end - 1:len(features) - 1,
+        validation_end - 1:len(features) - 1,
         close_index,
     ]
     baseline_usd = baseline_scaled * target_std + target_mean
 
     model_mae_usd = float(np.mean(np.abs(predicted_usd - actual_usd)))
-    model_rmse_usd = float(np.sqrt(np.mean((predicted_usd - actual_usd) ** 2)))
+    model_rmse_usd = float(
+        np.sqrt(np.mean((predicted_usd - actual_usd) ** 2))
+    )
     baseline_mae_usd = float(np.mean(np.abs(baseline_usd - actual_usd)))
     baseline_rmse_usd = float(
         np.sqrt(np.mean((baseline_usd - actual_usd) ** 2))
     )
 
     loss_plot = plot_dir / "training_validation_loss.png"
-    prediction_plot = plot_dir / "actual_vs_predicted.png"
+    prediction_plot = plot_dir / "actual_vs_predicted_test.png"
+    predictions_csv = plot_dir / "test_predictions.csv"
     save_loss_plot(history, loss_plot)
     save_prediction_plot(
-        timestamps[train_end:],
+        timestamps[validation_end:],
         actual_usd,
         predicted_usd,
         baseline_usd,
         prediction_plot,
     )
+    pd.DataFrame(
+        {
+            "timestamp_utc": pd.to_datetime(
+                timestamps[validation_end:],
+                unit="s",
+                utc=True,
+            ),
+            "actual_close_usd": actual_usd,
+            "gru_prediction_usd": predicted_usd,
+            "naive_baseline_usd": baseline_usd,
+        }
+    ).to_csv(predictions_csv, index=False)
 
-    print("Validation MSE (normalized): {:.6f}".format(metrics["loss"]))
-    print("Validation MAE (normalized): {:.6f}".format(metrics["mae"]))
-    print("Validation MAE (USD): ${:,.2f}".format(model_mae_usd))
-    print("Validation RMSE (USD): ${:,.2f}".format(model_rmse_usd))
+    print("Validation MSE (normalized): {:.6f}".format(
+        validation_metrics["loss"]
+    ))
+    print("Validation MAE (normalized): {:.6f}".format(
+        validation_metrics["mae"]
+    ))
+    print("Test MSE (normalized): {:.6f}".format(test_metrics["loss"]))
+    print("Test MAE (normalized): {:.6f}".format(test_metrics["mae"]))
+    print("Test MAE (USD): ${:,.2f}".format(model_mae_usd))
+    print("Test RMSE (USD): ${:,.2f}".format(model_rmse_usd))
     print("Naive baseline MAE (USD): ${:,.2f}".format(baseline_mae_usd))
-    print("Naive baseline RMSE (USD): ${:,.2f}".format(baseline_rmse_usd))
+    print("Naive baseline RMSE (USD): ${:,.2f}".format(
+        baseline_rmse_usd
+    ))
     print("Best model saved to: {}".format(model_path))
     print("Loss plot saved to: {}".format(loss_plot))
-    print("Prediction plot saved to: {}".format(prediction_plot))
+    print("Test prediction plot saved to: {}".format(prediction_plot))
+    print("Test predictions saved to: {}".format(predictions_csv))
 
 
 if __name__ == "__main__":
