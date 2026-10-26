@@ -306,7 +306,7 @@ def load_hourly_news(path, hourly_index):
     )
     if coin_column is not None:
         is_bitcoin = news[coin_column].astype(str).str.lower().str.contains(
-            r"\\bbitcoin\\b|\\bbtc\\b",
+            r"\bbitcoin\b|\bbtc\b",
             regex=True,
         )
         news = news.loc[is_bitcoin]
