@@ -52,7 +52,7 @@ When a source file contains only BTC volume (the lowercase `volume` column), the
 Run preprocessing with the actual filename you downloaded. For example:
 
 ```bash
-python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --output btc_market_only.npz
+python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --start-date "2017-01-01" --end-date "2025-01-07 00:00:00" --output btc_market_only.npz
 ```
 
 If you downloaded the original Kaggle files instead, pass the relevant filenames. If you have only one exchange file, pass only that filename.
@@ -99,20 +99,22 @@ These files are generated from the actual run. Use their measured metrics in any
 
 ## 4. Optional experiment: add news sentiment
 
-The code can also use news headlines if you have a CSV containing publication timestamps and headline text. First, score the headlines with the included VADER-based baseline:
+For the news extension, you can use a pre-scored news dataset or score your own timestamped headlines. The [CryptoVision dataset on Mendeley Data](https://data.mendeley.com/datasets/wvjjxr8bxx/2) is one possible research source; read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) for details, required columns, date alignment, and limitations.
+
+If you have raw headlines, score them first:
 
 ```bash
 python score_news.py news_headlines.csv --output news_sentiment.csv
 ```
 
-Then prepare and train the news-enhanced model:
+Then use the same date range for both market-only and news-enhanced experiments:
 
 ```bash
-python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --news-file news_sentiment.csv --output btc_with_news.npz
+python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --news-file news_sentiment.csv --start-date "2017-01-01" --end-date "2025-01-07 00:00:00" --output btc_with_news.npz
 python forecast_btc.py --data btc_with_news.npz --model models/btc_with_news.keras --plot-dir results/with_news --epochs 50 --batch-size 64
 ```
 
-Read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) for the required input columns and precautions. VADER is a general-purpose sentiment baseline, not a finance-specific model. Use real headlines with accurate publication times, and do not invent news data.
+VADER is a general-purpose baseline, not a finance-specific model. Use real headlines with accurate publication times, respect dataset terms, and do not invent news data.
 
 Compare the two experiments using the same date range and split strategy:
 
