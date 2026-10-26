@@ -22,6 +22,7 @@ HEADLINE_ALIASES = {
     "article_title",
     "text",
 }
+COIN_ALIASES = {"coin_type", "coin", "asset", "symbol"}
 
 
 def parse_arguments():
@@ -88,6 +89,27 @@ def main():
         HEADLINE_ALIASES,
         "headline/title/text",
     )
+
+    coin_lookup = {
+        str(column).strip().lower(): column
+        for column in data.columns
+    }
+    coin_column = next(
+        (
+            coin_lookup[name]
+            for name in COIN_ALIASES
+            if name in coin_lookup
+        ),
+        None,
+    )
+    if coin_column is not None:
+        is_bitcoin = data[coin_column].astype(str).str.lower().str.contains(
+            r"\bbitcoin\b|\bbtc\b",
+            regex=True,
+        )
+        data = data.loc[is_bitcoin]
+        if data.empty:
+            raise ValueError("No Bitcoin-specific headlines were found.")
 
     result = pd.DataFrame(
         {
