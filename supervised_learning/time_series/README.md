@@ -45,7 +45,9 @@ python -m pip install -r requirements.txt
 
 Download one-minute Bitcoin data from Coinbase and/or Bitstamp. The script supports both the original Kaggle-style columns (such as `Timestamp`, `Volume_(BTC)`, and `Volume_(Currency)`) and simpler OHLCV CSVs with lowercase columns (`timestamp,open,high,low,close,volume`).
 
-One public Bitstamp historical dataset is available in the [Bitstamp BTC/USD minute-data repository](https://github.com/ff137/bitstamp-btcusd-minute-data). Its historical file is compressed, so you can pass the `.csv.gz` file directly to pandas. The dataset repository documents the source and applicable data licence; retain the required attribution if you use or redistribute the data.
+One public Bitstamp historical dataset is available in the [Bitstamp BTC/USD minute-data repository](https://github.com/ff137/bitstamp-btcusd-minute-data). Its historical file is compressed, so you can pass the `.csv.gz` file directly to pandas. The repository documents the source and applicable data licence. The historical bulk data is derived from the Kaggle dataset by Zielak (mczielinski) and is published under CC BY-SA 4.0; retain the required attribution if you use or redistribute it.
+
+When a source file contains only BTC volume (the lowercase `volume` column), the preprocessing script estimates currency volume as BTC volume multiplied by the closing price. Treat this as an approximation, not as an exchange-reported currency-volume measurement.
 
 Run preprocessing with the actual filename you downloaded. For example:
 
