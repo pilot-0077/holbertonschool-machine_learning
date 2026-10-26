@@ -1,83 +1,88 @@
 # Time Series Forecasting
 
-This project focuses on forecasting data that is ordered over time using
-recurrent neural networks and TensorFlow data pipelines.
+This project explores time-series forecasting with TensorFlow. The goal is to use the previous 24 hours of Bitcoin market data to estimate the next hour's closing price.
 
-## Learning Objectives
+## What you will learn
 
-By the end of this project, I should be able to explain:
+- What time-series forecasting and sliding windows are
+- How to clean and aggregate minute-level market data
+- Why normalization must use training data statistics only
+- How to build a TensorFlow data pipeline
+- How to train and evaluate a GRU-based recurrent neural network
+- How to compare model predictions with a simple baseline
 
-- What time series forecasting is
-- What a stationary process is
-- What a sliding window is
-- How to preprocess time series data
-- How to create a TensorFlow data pipeline for time series data
-- How to perform time series forecasting with RNNs in TensorFlow
+## Project files
 
-## Task 0 - When to Invest
+- `preprocess_data.py`: prepares raw exchange CSV files and creates `btc_hourly.npz`
+- `forecast_btc.py`: trains the model, evaluates it, and saves two plots
+- `requirements.txt`: lists the Python dependencies
 
-The goal is to forecast the Bitcoin closing price for the following hour
-using the previous 24 hours of market data.
+## 1. Set up the environment
 
-The raw Coinbase and Bitstamp datasets contain one-minute observations with:
-
-- Unix timestamp
-- Open, high, low, and close prices
-- BTC transaction volume
-- Currency transaction volume
-- Volume-weighted average price
-
-### `preprocess_data.py`
-
-The preprocessing script:
-
-- loads one or both raw exchange CSV files
-- aggregates one-minute observations into hourly OHLCV data
-- handles missing hourly intervals
-- combines Coinbase and Bitstamp data when both are supplied
-- keeps the useful market features
-- performs a chronological train/validation split
-- normalizes data using training statistics only
-- saves the processed arrays to `btc_hourly.npz`
-
-Example:
+Use a Python version supported by your installed TensorFlow release.
 
 ```bash
-./preprocess_data.py bitstampUSD_1-min_data.csv \
-    coinbaseUSD_1-min_data.csv
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-If no paths are supplied, the script searches the current directory for
-common Coinbase and Bitstamp one-minute CSV filenames.
+On Windows PowerShell, activate the environment with:
 
-### `forecast_btc.py`
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
 
-The forecasting script:
+## 2. Prepare the raw data
 
-- loads `btc_hourly.npz`
-- creates 24-hour sliding windows
-- feeds the windows through a `tf.data.Dataset`
-- trains a stacked GRU model
-- uses mean-squared error as the loss function
-- validates on chronologically later data
-- saves the best model as `btc_forecaster.keras`
+Download the one-minute Bitcoin CSV dataset files from Coinbase and/or Bitstamp. The files must contain the columns expected by the preprocessing script, including `Timestamp`, `Open`, `High`, `Low`, `Close`, `Volume_(BTC)`, and `Volume_(Currency)`.
 
-Run it with:
+Run the script with the actual filenames you downloaded:
 
 ```bash
-./forecast_btc.py
+python preprocess_data.py bitstampUSD_1-min_data.csv coinbaseUSD_1-min_data.csv
 ```
 
-Optional arguments include `--epochs`, `--batch-size`, `--data`, and
-`--model`.
+Use only the file or files you have. For example, if you have only the Bitstamp file:
 
-## Files
+```bash
+python preprocess_data.py bitstampUSD_1-min_data.csv
+```
 
-- `README.md`
-- `preprocess_data.py`
-- `forecast_btc.py`
+The script aggregates minute-level observations into hourly rows, handles missing values, combines supplied exchange data, and normalizes features using statistics calculated from the first 80% of the chronological data. The remaining 20% is held out for validation.
 
-## Repository
+The output is `btc_hourly.npz`. The raw CSV files are not included in this repository; provide their local paths when running preprocessing.
 
-- GitHub repository: `holbertonschool-machine_learning`
-- Directory: `supervised_learning/time_series`
+## 3. Train and evaluate the model
+
+```bash
+python forecast_btc.py --epochs 50 --batch-size 64
+```
+
+Optional arguments:
+
+- `--data`: path to the preprocessed NPZ file
+- `--model`: path for the saved model
+- `--plot-dir`: directory for evaluation plots
+- `--epochs`: maximum number of training epochs
+- `--batch-size`: training batch size
+
+The model uses 24 consecutive hourly observations to predict the next hour's closing price. It contains two GRU layers (64 and 32 units), followed by a dense layer with 16 neurons and a single output neuron. Training uses Adam, MSE loss, early stopping, and model checkpointing.
+
+The script reports normalized validation MSE and MAE, converts MAE and RMSE to approximate USD errors, and compares the model with a naive baseline that predicts the next close will equal the most recent close.
+
+## 4. View the generated plots
+
+After training, the `plots/` directory contains:
+
+- `training_validation_loss.png`: training loss and validation loss across epochs
+- `actual_vs_predicted.png`: actual validation prices, GRU predictions, and the naive baseline
+
+These figures are generated from the actual training run. Do not publish example or illustrative charts as if they were measured model results.
+
+## Important limitations
+
+This is an educational experiment, not financial advice. Historical prices and trading volumes do not capture every event that affects Bitcoin. Forecasting performance should be evaluated against a baseline and across different market periods before drawing conclusions.
