@@ -233,16 +233,47 @@ def combine_exchanges(frames):
 def load_hourly_news(path, hourly_index):
     """Align timestamped article sentiment scores to hourly market rows."""
     news = pd.read_csv(path)
-    required = {"Timestamp", "sentiment_score"}
-    missing = required - set(news.columns)
-    if missing:
+    timestamp_aliases = {
+        "timestamp",
+        "date_time",
+        "published_at",
+        "publishedat",
+        "date",
+        "time",
+    }
+    score_aliases = {"sentiment_score", "score", "sentiment"}
+    column_lookup = {
+        str(column).strip().lower(): column
+        for column in news.columns
+    }
+    timestamp_column = next(
+        (
+            column_lookup[name]
+            for name in timestamp_aliases
+            if name in column_lookup
+        ),
+        None,
+    )
+    score_column = next(
+        (
+            column_lookup[name]
+            for name in score_aliases
+            if name in column_lookup
+        ),
+        None,
+    )
+    if timestamp_column is None or score_column is None:
         raise ValueError(
-            "{} must contain columns: {}".format(
-                path,
-                ", ".join(sorted(required)),
-            )
+            "{} must contain a timestamp column and a sentiment score "
+            "column.".format(path)
         )
 
+    news = news.rename(
+        columns={
+            timestamp_column: "Timestamp",
+            score_column: "sentiment_score",
+        }
+    )
     if pd.api.types.is_numeric_dtype(news["Timestamp"]):
         news["Timestamp"] = pd.to_datetime(
             news["Timestamp"],
