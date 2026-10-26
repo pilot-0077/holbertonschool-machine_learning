@@ -97,10 +97,10 @@ A model that trains successfully is not necessarily useful. To make the evaluati
 
 **Replace the values below with the measured output from the actual run. Do not publish this section with placeholders.**
 
-| Test metric | Market-only GRU | Previous-close baseline |
-|---|---:|---:|
-| MAE in USD | [insert result] | [insert result] |
-| RMSE in USD | [insert result] | [insert result] |
+| Test metric | Market-only GRU | GRU + news | Previous-close baseline |
+|---|---:|---:|---:|
+| MAE in USD | [insert result] | [insert result] | [insert result] |
+| RMSE in USD | [insert result] | [insert result] | [insert result] |
 
 Also report the normalized test MSE and MAE from the training script. Lower error is better, but the baseline comparison matters: if the GRU cannot beat a simple previous-close prediction, the more complex model may not add practical value.
 
@@ -112,13 +112,13 @@ Insert `results/market_only/training_validation_loss.png` after running the expe
 
 Insert `results/market_only/actual_vs_predicted_test.png`. This graph compares real test-period closing prices with the GRU predictions and the previous-close baseline.
 
-### Optional extension: adding news sentiment
+### Graph 3: Actual versus predicted prices with news features
 
-Market prices alone do not capture every event. The repository therefore supports an optional experiment that adds hourly news sentiment and article counts.
+If the news-enhanced experiment has been run, insert `results/with_news/actual_vs_predicted_test.png` here and compare it with the market-only graph.
 
-The news-enhanced model should be trained and tested over the same dates and with the same chronological split as the market-only model. Only then is the comparison fair.
+Market prices alone do not capture every event. The repository therefore supports an optional experiment that adds hourly news sentiment and article counts. The provided sentiment scorer uses VADER as a simple baseline; a finance-specific sentiment model may be more suitable for a serious research project.
 
-If the news-enhanced model achieves lower held-out test error, that is evidence that the added features helped on this test period — not proof that news will always improve forecasts.
+The news-enhanced model must be trained and tested over the same dates and with the same chronological split as the market-only model. Only then is the comparison fair. If the news-enhanced model achieves lower held-out test error, that is evidence that the added features helped on this test period — not proof that news will always improve forecasts.
 
 ## 6. What I learned
 
