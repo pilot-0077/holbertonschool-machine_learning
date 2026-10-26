@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preprocess raw Bitcoin minute data for time-series forecasting."""
+"""Prepare Bitcoin market data for time-series forecasting."""
 
 import argparse
 from pathlib import Path
@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 
-FEATURES = [
+MARKET_FEATURES = [
     "Open",
     "High",
     "Low",
@@ -17,20 +17,30 @@ FEATURES = [
     "Volume_(Currency)",
     "Weighted_Price",
 ]
+NEWS_FEATURES = ["News_Sentiment", "News_Count"]
 TARGET = "Close"
-TRAIN_FRACTION = 0.8
+TRAIN_FRACTION = 0.70
+VALIDATION_FRACTION = 0.15
 OUTPUT_FILE = "btc_hourly.npz"
 
 
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Prepare Coinbase/Bitstamp minute data for forecasting."
+        description="Prepare Bitcoin market and optional news data."
     )
     parser.add_argument(
         "csv_files",
         nargs="*",
         help="Raw Coinbase and/or Bitstamp CSV files.",
+    )
+    parser.add_argument(
+        "--news-file",
+        default=None,
+        help=(
+            "Optional CSV with Timestamp and sentiment_score columns, "
+            "one row per news article."
+        ),
     )
     parser.add_argument(
         "--output",
@@ -56,30 +66,22 @@ def discover_csv_files():
 
 def load_exchange(path):
     """Load one raw exchange CSV and validate required columns."""
-    columns = ["Timestamp"] + FEATURES
+    columns = ["Timestamp"] + MARKET_FEATURES
     data = pd.read_csv(path, usecols=columns)
-
-    missing = set(columns) - set(data.columns)
-    if missing:
-        raise ValueError(
-            "{} is missing columns: {}".format(
-                path,
-                ", ".join(sorted(missing)),
-            )
-        )
 
     data["Timestamp"] = pd.to_datetime(
         data["Timestamp"],
         unit="s",
         errors="coerce",
-    )
+        utc=True,
+    ).dt.tz_convert(None)
     data = data.dropna(subset=["Timestamp"])
     data = data.set_index("Timestamp").sort_index()
     return data
 
 
 def to_hourly(data):
-    """Aggregate one-minute OHLCV observations into hourly rows."""
+    """Aggregate one-minute observations into hourly market rows."""
     hourly = data.resample("1h").agg(
         {
             "Open": "first",
@@ -115,7 +117,7 @@ def to_hourly(data):
         where=btc_volume != 0,
     )
     hourly["Weighted_Price"] = weighted
-    return hourly[FEATURES]
+    return hourly[MARKET_FEATURES]
 
 
 def combine_exchanges(frames):
@@ -125,7 +127,6 @@ def combine_exchanges(frames):
 
     data = pd.concat(frames).sort_index()
     grouped = data.groupby(level=0)
-
     combined = grouped.agg(
         {
             "Open": "mean",
@@ -141,23 +142,80 @@ def combine_exchanges(frames):
     usd_volume = combined["Volume_(Currency)"].to_numpy()
     close = combined["Close"].to_numpy()
 
-    weighted = np.divide(
+    combined["Weighted_Price"] = np.divide(
         usd_volume,
         btc_volume,
         out=close.copy(),
         where=btc_volume != 0,
     )
-    combined["Weighted_Price"] = weighted
-    return combined[FEATURES]
+    return combined[MARKET_FEATURES]
 
 
-def scale_data(data):
-    """Scale features with statistics computed from training data only."""
+def load_hourly_news(path, hourly_index):
+    """Align timestamped article sentiment scores to hourly market rows."""
+    news = pd.read_csv(path)
+    required = {"Timestamp", "sentiment_score"}
+    missing = required - set(news.columns)
+    if missing:
+        raise ValueError(
+            "{} must contain columns: {}".format(
+                path,
+                ", ".join(sorted(required)),
+            )
+        )
+
+    if pd.api.types.is_numeric_dtype(news["Timestamp"]):
+        news["Timestamp"] = pd.to_datetime(
+            news["Timestamp"],
+            unit="s",
+            errors="coerce",
+            utc=True,
+        ).dt.tz_convert(None)
+    else:
+        news["Timestamp"] = pd.to_datetime(
+            news["Timestamp"],
+            errors="coerce",
+            utc=True,
+        ).dt.tz_convert(None)
+
+    news["sentiment_score"] = pd.to_numeric(
+        news["sentiment_score"],
+        errors="coerce",
+    )
+    news = news.dropna(subset=["Timestamp", "sentiment_score"])
+
+    if news.empty:
+        raise ValueError("No valid timestamped news sentiment rows were found.")
+
+    news = news.set_index("Timestamp").sort_index()
+    hourly_news = news.resample("1h").agg(
+        News_Sentiment=("sentiment_score", "mean"),
+        News_Count=("sentiment_score", "count"),
+    )
+    hourly_news = hourly_news.reindex(hourly_index)
+    hourly_news["News_Sentiment"] = (
+        hourly_news["News_Sentiment"].fillna(0.0)
+    )
+    hourly_news["News_Count"] = hourly_news["News_Count"].fillna(0.0)
+    return hourly_news[NEWS_FEATURES]
+
+
+def scale_data(data, feature_names):
+    """Scale features using training-only statistics and define splits."""
     values = data.to_numpy(dtype=np.float64)
     train_end = int(len(values) * TRAIN_FRACTION)
+    validation_end = int(
+        len(values) * (TRAIN_FRACTION + VALIDATION_FRACTION)
+    )
 
-    if train_end <= 24 or train_end >= len(values):
-        raise ValueError("The dataset is too small for a chronological split.")
+    if (
+        train_end <= 24
+        or validation_end <= train_end
+        or validation_end >= len(values)
+    ):
+        raise ValueError(
+            "The dataset is too small for train/validation/test splits."
+        )
 
     train = values[:train_end]
     mean = train.mean(axis=0)
@@ -165,20 +223,19 @@ def scale_data(data):
     std[std == 0] = 1.0
 
     features = (values - mean) / std
-    target_index = FEATURES.index(TARGET)
+    target_index = feature_names.index(TARGET)
     target = features[:, target_index].copy()
 
-    return features, target, mean, std, train_end
+    return features, target, mean, std, train_end, validation_end
 
 
 def main():
-    """Run preprocessing and save the resulting arrays."""
+    """Run preprocessing and save market features and split metadata."""
     arguments = parse_arguments()
     csv_files = [Path(path) for path in arguments.csv_files]
 
     if not csv_files:
         csv_files = discover_csv_files()
-
     if not csv_files:
         raise FileNotFoundError(
             "No Coinbase or Bitstamp one-minute CSV file was found."
@@ -192,34 +249,51 @@ def main():
         frames.append(to_hourly(load_exchange(path)))
 
     hourly = combine_exchanges(frames)
+    feature_names = list(MARKET_FEATURES)
+
+    if arguments.news_file:
+        news_path = Path(arguments.news_file)
+        if not news_path.is_file():
+            raise FileNotFoundError(str(news_path))
+        news = load_hourly_news(news_path, hourly.index)
+        hourly = hourly.join(news)
+        feature_names.extend(NEWS_FEATURES)
+        print("Added hourly news sentiment features from {}.".format(news_path))
+
     hourly = hourly.replace([np.inf, -np.inf], np.nan).dropna()
+    features, target, mean, std, train_end, validation_end = scale_data(
+        hourly[feature_names],
+        feature_names,
+    )
 
-    features, target, mean, std, train_end = scale_data(hourly)
     timestamps = hourly.index.astype("int64").to_numpy() // 10**9
-    target_index = FEATURES.index(TARGET)
-
+    target_index = feature_names.index(TARGET)
     output = Path(arguments.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+
     np.savez_compressed(
         output,
         features=features.astype(np.float32),
         target=target.astype(np.float32),
         timestamps=timestamps.astype(np.int64),
         train_end=np.array(train_end, dtype=np.int64),
+        validation_end=np.array(validation_end, dtype=np.int64),
         feature_mean=mean,
         feature_std=std,
         target_mean=np.array(mean[target_index]),
         target_std=np.array(std[target_index]),
-        feature_names=np.array(FEATURES),
+        feature_names=np.array(feature_names),
     )
 
+    total = len(features)
+    print("Saved {} hourly observations to {}.".format(total, output))
+    print("Training rows: {} (70%)".format(train_end))
     print(
-        "Saved {} hourly observations to {}.".format(
-            len(features),
-            output,
+        "Validation rows: {} (15%)".format(
+            validation_end - train_end
         )
     )
-    print("Training rows: {}".format(train_end))
-    print("Validation rows: {}".format(len(features) - train_end))
+    print("Test rows: {} (15%)".format(total - validation_end))
 
 
 if __name__ == "__main__":
