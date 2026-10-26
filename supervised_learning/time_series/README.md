@@ -57,6 +57,20 @@ python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --output btc_mar
 
 If you downloaded the original Kaggle files instead, pass the relevant filenames. If you have only one exchange file, pass only that filename.
 
+On Windows, you can run the full market-only workflow with the helper script after placing the dataset in this directory:
+
+```powershell
+.\run_market_experiment.ps1
+```
+
+If the dataset is stored elsewhere, provide its path:
+
+```powershell
+.\run_market_experiment.ps1 -DataFile "C:\path\to\btcusd_bitstamp_1min_2012-2025.csv.gz"
+```
+
+The helper creates a virtual environment if needed, installs dependencies, preprocesses the data, and trains/evaluates the model. The first installation may take several minutes.
+
 The script aggregates minute-level rows into hourly observations, handles missing values, combines the supplied exchange data, and scales features using statistics from the training portion only. The data is split chronologically:
 
 - First 70%: training
