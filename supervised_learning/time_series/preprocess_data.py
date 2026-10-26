@@ -65,19 +65,98 @@ def discover_csv_files():
 
 
 def load_exchange(path):
-    """Load one raw exchange CSV and validate required columns."""
-    columns = ["Timestamp"] + MARKET_FEATURES
-    data = pd.read_csv(path, usecols=columns)
+    """Load exchange CSVs using either Kaggle or simple OHLCV headers."""
+    data = pd.read_csv(path)
+    aliases = {
+        "Timestamp": {"timestamp", "time"},
+        "Open": {"open"},
+        "High": {"high"},
+        "Low": {"low"},
+        "Close": {"close"},
+        "Volume_(BTC)": {"volume_(btc)", "volume", "volume_btc"},
+        "Volume_(Currency)": {
+            "volume_(currency)",
+            "volume_currency",
+            "volume_usd",
+            "quote_volume",
+        },
+    }
 
-    data["Timestamp"] = pd.to_datetime(
-        data["Timestamp"],
-        unit="s",
-        errors="coerce",
-        utc=True,
-    ).dt.tz_convert(None)
-    data = data.dropna(subset=["Timestamp"])
+    rename = {}
+    lowered = {
+        str(column).strip().lower(): column
+        for column in data.columns
+    }
+    for canonical, names in aliases.items():
+        for alias in names:
+            if alias in lowered:
+                rename[lowered[alias]] = canonical
+                break
+    data = data.rename(columns=rename)
+
+    required = {
+        "Timestamp",
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Volume_(BTC)",
+    }
+    missing = required - set(data.columns)
+    if missing:
+        raise ValueError(
+            "{} is missing required columns: {}".format(
+                path,
+                ", ".join(sorted(missing)),
+            )
+        )
+
+    if pd.api.types.is_numeric_dtype(data["Timestamp"]):
+        data["Timestamp"] = pd.to_datetime(
+            data["Timestamp"],
+            unit="s",
+            errors="coerce",
+            utc=True,
+        ).dt.tz_convert(None)
+    else:
+        data["Timestamp"] = pd.to_datetime(
+            data["Timestamp"],
+            errors="coerce",
+            utc=True,
+        ).dt.tz_convert(None)
+
+    numeric_columns = [
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Volume_(BTC)",
+    ]
+    for column in numeric_columns:
+        data[column] = pd.to_numeric(data[column], errors="coerce")
+
+    if "Volume_(Currency)" not in data.columns:
+        data["Volume_(Currency)"] = (
+            data["Volume_(BTC)"] * data["Close"]
+        )
+    else:
+        data["Volume_(Currency)"] = pd.to_numeric(
+            data["Volume_(Currency)"],
+            errors="coerce",
+        )
+
+    data = data.dropna(subset=["Timestamp", "Close"])
     data = data.set_index("Timestamp").sort_index()
-    return data
+    return data[
+        [
+            "Open",
+            "High",
+            "Low",
+            "Close",
+            "Volume_(BTC)",
+            "Volume_(Currency)",
+        ]
+    ]
 
 
 def to_hourly(data):
