@@ -43,6 +43,16 @@ def parse_arguments():
         ),
     )
     parser.add_argument(
+        "--start-date",
+        default=None,
+        help="Optional inclusive start timestamp in UTC.",
+    )
+    parser.add_argument(
+        "--end-date",
+        default=None,
+        help="Optional inclusive end timestamp in UTC.",
+    )
+    parser.add_argument(
         "--output",
         default=OUTPUT_FILE,
         help="Path for the compressed preprocessed dataset.",
@@ -62,6 +72,16 @@ def discover_csv_files():
     for pattern in patterns:
         found.extend(Path(".").glob(pattern))
     return sorted(set(found))
+
+
+def parse_boundary(value):
+    """Parse an optional UTC timestamp boundary."""
+    if value is None:
+        return None
+    timestamp = pd.Timestamp(value)
+    if timestamp.tzinfo is not None:
+        timestamp = timestamp.tz_convert(None)
+    return timestamp
 
 
 def load_exchange(path):
@@ -274,6 +294,27 @@ def load_hourly_news(path, hourly_index):
             score_column: "sentiment_score",
         }
     )
+
+    coin_aliases = {"coin_type", "coin", "asset", "symbol"}
+    coin_column = next(
+        (
+            column_lookup[name]
+            for name in coin_aliases
+            if name in column_lookup
+        ),
+        None,
+    )
+    if coin_column is not None:
+        is_bitcoin = news[coin_column].astype(str).str.lower().str.contains(
+            r"\\bbitcoin\\b|\\bbtc\\b",
+            regex=True,
+        )
+        news = news.loc[is_bitcoin]
+        if news.empty:
+            raise ValueError(
+                "No Bitcoin-specific rows were found in {}.".format(path)
+            )
+
     if pd.api.types.is_numeric_dtype(news["Timestamp"]):
         news["Timestamp"] = pd.to_datetime(
             news["Timestamp"],
@@ -361,6 +402,18 @@ def main():
         frames.append(to_hourly(load_exchange(path)))
 
     hourly = combine_exchanges(frames)
+    start_date = parse_boundary(arguments.start_date)
+    end_date = parse_boundary(arguments.end_date)
+    if start_date is not None and end_date is not None:
+        if start_date > end_date:
+            raise ValueError("--start-date must not be after --end-date.")
+    if start_date is not None:
+        hourly = hourly.loc[hourly.index >= start_date]
+    if end_date is not None:
+        hourly = hourly.loc[hourly.index <= end_date]
+    if hourly.empty:
+        raise ValueError("No market observations remain after date filtering.")
+
     feature_names = list(MARKET_FEATURES)
 
     if arguments.news_file:
