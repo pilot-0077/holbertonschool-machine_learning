@@ -340,6 +340,14 @@ def load_hourly_news(path, hourly_index):
             "No valid timestamped news sentiment rows were found."
         )
 
+    if (
+        news["Timestamp"].max() < hourly_index.min()
+        or news["Timestamp"].min() > hourly_index.max()
+    ):
+        raise ValueError(
+            "News timestamps do not overlap the selected market date range."
+        )
+
     news = news.set_index("Timestamp").sort_index()
     hourly_news = news.resample("1h").agg(
         News_Sentiment=("sentiment_score", "mean"),
