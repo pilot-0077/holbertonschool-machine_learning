@@ -264,7 +264,9 @@ def load_hourly_news(path, hourly_index):
     news = news.dropna(subset=["Timestamp", "sentiment_score"])
 
     if news.empty:
-        raise ValueError("No valid timestamped news sentiment rows were found.")
+        raise ValueError(
+            "No valid timestamped news sentiment rows were found."
+        )
 
     news = news.set_index("Timestamp").sort_index()
     hourly_news = news.resample("1h").agg(
@@ -337,7 +339,11 @@ def main():
         news = load_hourly_news(news_path, hourly.index)
         hourly = hourly.join(news)
         feature_names.extend(NEWS_FEATURES)
-        print("Added hourly news sentiment features from {}.".format(news_path))
+        print(
+            "Added hourly news sentiment features from {}.".format(
+                news_path
+            )
+        )
 
     hourly = hourly.replace([np.inf, -np.inf], np.nan).dropna()
     features, target, mean, std, train_end, validation_end = scale_data(
