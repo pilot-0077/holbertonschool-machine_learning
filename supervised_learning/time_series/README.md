@@ -54,7 +54,7 @@ When a source file contains only BTC volume (the lowercase `volume` column), the
 Run preprocessing with the actual filename you downloaded. For example:
 
 ```bash
-python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --start-date "2017-01-01" --end-date "2025-01-07 00:00:00" --output btc_market_only.npz
+python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --start-date "2017-01-01" --end-date "2025-01-07 00:00:00" --output btc_market_only_returns.npz
 ```
 
 If you downloaded the original Kaggle files instead, pass the relevant filenames. If you have only one exchange file, pass only that filename.
@@ -71,7 +71,7 @@ If the dataset is stored elsewhere, provide its path:
 .\run_market_experiment.ps1 -DataFile "C:\path\to\btcusd_bitstamp_1min_2012-2025.csv.gz"
 ```
 
-The helper creates a virtual environment if needed, installs dependencies, preprocesses the data, and trains/evaluates the model. The first installation may take several minutes.
+The helper creates a virtual environment if needed, installs dependencies, preprocesses the data, and trains/evaluates the return-based model. It writes to `btc_market_only_returns.npz`, `models/btc_market_only_returns.keras`, and `results/market_only_returns` so results from the earlier raw-price experiment are preserved. The first installation may take several minutes.
 
 The script aggregates minute-level rows into hourly observations, handles missing values, combines the supplied exchange data, and scales features using statistics from the training portion only. The data is split chronologically:
 
@@ -84,7 +84,7 @@ The test set is not used to select the best model.
 ## 3. Train and evaluate the market-only model
 
 ```bash
-python forecast_btc.py --data btc_market_only.npz --model models/btc_market_only.keras --plot-dir results/market_only --epochs 50 --batch-size 64
+python forecast_btc.py --data btc_market_only_returns.npz --model models/btc_market_only_returns.keras --plot-dir results/market_only_returns --epochs 50 --batch-size 64
 ```
 
 The GRU model uses 24 hourly observations, two GRU layers (64 and 32 units), a dense layer with 16 neurons, and a one-value output layer. Instead of predicting the raw price level, it predicts the next-hour log return. Price-relative features and log-transformed volume features help reduce scale changes across market regimes. The predicted return is converted back into a USD closing-price estimate for evaluation. Training-only statistics are used to scale features and the target. The model uses Adam, mean squared error loss, early stopping, and model checkpointing.
