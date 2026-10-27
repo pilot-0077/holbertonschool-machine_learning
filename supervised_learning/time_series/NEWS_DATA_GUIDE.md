@@ -11,7 +11,7 @@ After downloading the data, save the relevant CSV locally. The preprocessing scr
 Use the same overlapping date range for both experiments. The historical Bitstamp market file covers through 7 January 2025, so the helper uses that end date by default.
 
 ```powershell
-.\\run_news_experiment.ps1 -DataFile "D:\\path\\to\\btcusd_bitstamp_1min_2012-2025.csv" -NewsFile ".\\cryptovision.csv"
+.\run_news_experiment.ps1 -DataFile "D:\path\to\btcusd_bitstamp_1min_2012-2025.csv" -NewsFile ".\cryptovision.csv"
 ```
 
 The helper uses the same 2017-01-01 through 2025-01-07 date window and return-based target as the market-only experiment. It writes separate outputs to `btc_with_news_returns.npz`, `models/btc_with_news_returns.keras`, and `results/with_news_returns` so it does not overwrite the market-only run.
