@@ -4,7 +4,7 @@
 
 *My journey from raw market data to next-hour predictions using TensorFlow and GRU networks.*
 
-> **Publication note:** Both market-only and news-enhanced experiments have been run and the measured metrics are included below. Insert the generated plots from the local `results` folders before publishing. In this run, adding news sentiment did not improve the test metrics.
+> **Publication note:** Both market-only and news-enhanced experiments have been run. The four figures below are SVG redraws based on the generated plot images; the original PNG outputs remain in the local `results` folders. In this run, adding news sentiment did not improve the test metrics.
 
 Bitcoin prices can move quickly. News, regulation, interest rates, liquidity, and investor behaviour can all influence the market. That makes Bitcoin an interesting challenge for machine learning — and a good reminder that a model's prediction is never a promise.
 
@@ -106,19 +106,27 @@ The return-based GRU improved substantially on the first raw-price version, but 
 
 ### Graph 1: Training and validation loss
 
-Insert `results/market_only_returns/training_validation_loss.png` from the return-based experiment. This graph helps show whether validation performance improves along with training performance or whether the model begins to overfit.
+![Market-only training and validation loss](market_only_returns_training_validation_loss.svg)
+
+This graph helps show whether validation performance improves along with training performance or whether the model begins to overfit.
 
 ### Graph 2: Actual versus predicted closing prices
 
-Insert `results/market_only_returns/actual_vs_predicted_test.png`. This graph compares real test-period closing prices with the GRU predictions and the previous-close baseline.
+![Market-only actual versus predicted closing prices](market_only_returns_actual_vs_predicted_test.svg)
+
+This graph compares real test-period closing prices with the GRU predictions and the previous-close baseline.
 
 ### Graph 3: Actual versus predicted prices with news features
 
-Insert `results/with_news_returns/actual_vs_predicted_test.png`. The news-enhanced model's test MAE was **$225.05** and RMSE was **$355.58**, slightly worse than both the market-only GRU ($224.45 MAE, $355.06 RMSE) and the previous-close baseline ($224.78 MAE, $355.25 RMSE).
+![News-enhanced actual versus predicted closing prices](with_news_returns_actual_vs_predicted_test.svg)
+
+The news-enhanced model's test MAE was **$225.05** and RMSE was **$355.58**, slightly worse than both the market-only GRU ($224.45 MAE, $355.06 RMSE) and the previous-close baseline ($224.78 MAE, $355.25 RMSE).
 
 ### Graph 4: News-model training and validation loss
 
-Insert `results/with_news_returns/training_validation_loss.png` to show the news-enhanced model's training and validation loss across epochs.
+![News-enhanced training and validation loss](with_news_returns_training_validation_loss.svg)
+
+This graph shows the news-enhanced model's training and validation loss across epochs.
 
 The news experiment adds hourly average signed sentiment and article counts to the market features. The CryptoVision file's sentiment label provides direction, while its score is treated as confidence. The confidence score is made positive for positive labels, negative for negative labels, and zero for neutral labels.
 
