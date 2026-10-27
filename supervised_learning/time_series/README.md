@@ -122,6 +122,15 @@ The news-enhanced experiment has now been run on the same 70,272 hourly observat
 
 The news-enhanced model's normalized test MSE was 0.352685 and normalized test MAE was 0.390441. It did not improve on the market-only GRU or the naive baseline in this run. The differences are small, so this is not proof that news sentiment can never help; it means an advantage was not demonstrated with this dataset, feature construction, and model.
 
+## Experiment graphs
+
+The repository includes four SVG redraws based on the locally generated experiment plots. The original PNGs are retained in the local `results/market_only_returns` and `results/with_news_returns` folders.
+
+- [Market-only training and validation loss](market_only_returns_training_validation_loss.svg)
+- [Market-only actual vs. predicted prices](market_only_returns_actual_vs_predicted_test.svg)
+- [News-enhanced training and validation loss](with_news_returns_training_validation_loss.svg)
+- [News-enhanced actual vs. predicted prices](with_news_returns_actual_vs_predicted_test.svg)
+
 ## 4. Optional experiment: add news sentiment
 
 For the news extension, you can use a pre-scored news dataset or score your own timestamped headlines. The [CryptoVision dataset on Mendeley Data](https://data.mendeley.com/datasets/3c3xtxtfb6/2) is one possible research source; its published schema includes timestamped sentiment scores and a coin type. Read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) for download, licence, date alignment, and limitations.
