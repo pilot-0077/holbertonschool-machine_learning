@@ -18,7 +18,6 @@ MARKET_FEATURES = [
     "Weighted_Price",
 ]
 NEWS_FEATURES = ["News_Sentiment", "News_Count"]
-TARGET = "Close"
 TRAIN_FRACTION = 0.70
 VALIDATION_FRACTION = 0.15
 OUTPUT_FILE = "btc_hourly.npz"
@@ -361,9 +360,10 @@ def load_hourly_news(path, hourly_index):
     return hourly_news[NEWS_FEATURES]
 
 
-def scale_data(data, feature_names):
-    """Scale features using training-only statistics and define splits."""
+def scale_data(data, target_values):
+    """Scale features and next-hour log returns using training-only stats."""
     values = data.to_numpy(dtype=np.float64)
+    target_values = np.asarray(target_values, dtype=np.float64)
     train_end = int(len(values) * TRAIN_FRACTION)
     validation_end = int(
         len(values) * (TRAIN_FRACTION + VALIDATION_FRACTION)
@@ -378,20 +378,31 @@ def scale_data(data, feature_names):
             "The dataset is too small for train/validation/test splits."
         )
 
-    train = values[:train_end]
-    mean = train.mean(axis=0)
-    std = train.std(axis=0)
-    std[std == 0] = 1.0
+    train_features = values[:train_end]
+    feature_mean = train_features.mean(axis=0)
+    feature_std = train_features.std(axis=0)
+    feature_std[feature_std == 0] = 1.0
+    features = (values - feature_mean) / feature_std
 
-    features = (values - mean) / std
-    target_index = feature_names.index(TARGET)
-    target = features[:, target_index].copy()
+    train_targets = target_values[:train_end]
+    target_mean = float(train_targets.mean())
+    target_std = float(train_targets.std())
+    if target_std == 0:
+        target_std = 1.0
+    target = (target_values - target_mean) / target_std
 
-    return features, target, mean, std, train_end, validation_end
-
-
+    return (
+        features,
+        target,
+        feature_mean,
+        feature_std,
+        target_mean,
+        target_std,
+        train_end,
+        validation_end,
+    )
 def main():
-    """Run preprocessing and save market features and split metadata."""
+    """Prepare scale-independent market features and next-hour log returns."""
     arguments = parse_arguments()
     csv_files = [Path(path) for path in arguments.csv_files]
 
@@ -422,29 +433,55 @@ def main():
     if hourly.empty:
         raise ValueError("No market observations remain after date filtering.")
 
-    feature_names = list(MARKET_FEATURES)
+    close = hourly["Close"].astype(float).replace(0.0, np.nan)
+    log_return = np.log(close).diff()
+    feature_data = pd.DataFrame(index=hourly.index)
+    feature_data["Open_vs_Close"] = hourly["Open"] / close - 1.0
+    feature_data["High_vs_Close"] = hourly["High"] / close - 1.0
+    feature_data["Low_vs_Close"] = hourly["Low"] / close - 1.0
+    feature_data["Close_Return_1h"] = log_return
+    feature_data["Volume_BTC_Log"] = np.log1p(
+        hourly["Volume_(BTC)"].clip(lower=0.0)
+    )
+    feature_data["Volume_Currency_Log"] = np.log1p(
+        hourly["Volume_(Currency)"].clip(lower=0.0)
+    )
+    feature_data["Weighted_Price_vs_Close"] = (
+        hourly["Weighted_Price"] / close - 1.0
+    )
 
     if arguments.news_file:
         news_path = Path(arguments.news_file)
         if not news_path.is_file():
             raise FileNotFoundError(str(news_path))
         news = load_hourly_news(news_path, hourly.index)
-        hourly = hourly.join(news)
-        feature_names.extend(NEWS_FEATURES)
+        feature_data = feature_data.join(news)
         print(
             "Added hourly news sentiment features from {}.".format(
                 news_path
             )
         )
 
-    hourly = hourly.replace([np.inf, -np.inf], np.nan).dropna()
-    features, target, mean, std, train_end, validation_end = scale_data(
-        hourly[feature_names],
-        feature_names,
-    )
+    aligned = feature_data.join(log_return.rename("target_return"))
+    aligned = aligned.join(close.rename("close_usd"))
+    aligned = aligned.replace([np.inf, -np.inf], np.nan).dropna()
+    if aligned.empty:
+        raise ValueError("No valid feature and target rows remain.")
 
-    timestamps = hourly.index.astype("int64").to_numpy() // 10**9
-    target_index = feature_names.index(TARGET)
+    feature_names = list(feature_data.columns)
+    target_values = aligned["target_return"].to_numpy(dtype=np.float64)
+    (
+        features,
+        target,
+        feature_mean,
+        feature_std,
+        target_mean,
+        target_std,
+        train_end,
+        validation_end,
+    ) = scale_data(aligned[feature_names], target_values)
+
+    timestamps = aligned.index.astype("int64").to_numpy() // 10**9
     output = Path(arguments.output)
     output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -452,18 +489,20 @@ def main():
         output,
         features=features.astype(np.float32),
         target=target.astype(np.float32),
+        close_usd=aligned["close_usd"].to_numpy(dtype=np.float64),
         timestamps=timestamps.astype(np.int64),
         train_end=np.array(train_end, dtype=np.int64),
         validation_end=np.array(validation_end, dtype=np.int64),
-        feature_mean=mean,
-        feature_std=std,
-        target_mean=np.array(mean[target_index]),
-        target_std=np.array(std[target_index]),
+        feature_mean=feature_mean,
+        feature_std=feature_std,
+        target_mean=np.array(target_mean),
+        target_std=np.array(target_std),
         feature_names=np.array(feature_names),
     )
 
     total = len(features)
     print("Saved {} hourly observations to {}.".format(total, output))
+    print("Target: next-hour log return, converted to a closing price.")
     print("Training rows: {} (70%)".format(train_end))
     print(
         "Validation rows: {} (15%)".format(
