@@ -111,13 +111,22 @@ The market-only experiment was run on the selected historical period from 2017-0
 
 The return-based GRU's normalized test MSE was 0.351838 and normalized test MAE was 0.389412. Those normalized metrics apply to the log-return target and are not directly comparable with normalized errors from the raw-price model.
 
-The return-based GRU's USD errors were only marginally lower than the baseline (MAE by $0.33 and RMSE by $0.19). Treat the model as an educational experiment, not as evidence of a meaningful forecasting advantage. The optional news-enhanced experiment has not been run, so no conclusion about news sentiment is reported.
+The return-based GRU's USD errors were only marginally lower than the baseline (MAE by $0.33 and RMSE by $0.19). Treat the model as an educational experiment, not as evidence of a meaningful forecasting advantage.
+
+The news-enhanced experiment has now been run on the same 70,272 hourly observations and chronological split. The CSV's `sentiment_label` supplies direction and `sentiment_score` supplies confidence; preprocessing converts these to signed sentiment before hourly aggregation.
+
+| Test metric | Market-only GRU | News-enhanced GRU | Previous-close baseline |
+|---|---:|---:|---:|
+| MAE in USD | $224.45 | $225.05 | $224.78 |
+| RMSE in USD | $355.06 | $355.58 | $355.25 |
+
+The news-enhanced model's normalized test MSE was 0.352685 and normalized test MAE was 0.390441. It did not improve on the market-only GRU or the naive baseline in this run. The differences are small, so this is not proof that news sentiment can never help; it means an advantage was not demonstrated with this dataset, feature construction, and model.
 
 ## 4. Optional experiment: add news sentiment
 
 For the news extension, you can use a pre-scored news dataset or score your own timestamped headlines. The [CryptoVision dataset on Mendeley Data](https://data.mendeley.com/datasets/3c3xtxtfb6/2) is one possible research source; its published schema includes timestamped sentiment scores and a coin type. Read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) for download, licence, date alignment, and limitations.
 
-If you downloaded a pre-scored dataset with `Date_Time`, `Sentiment_Score`, and a coin/asset column, you can pass it directly. The script filters Bitcoin rows when a coin/asset column is present:
+The CryptoVision CSV used in this experiment has `Date Time`, `Coin Type`, `sentiment_label`, and `sentiment_score` columns. The preprocessing code normalizes header case and spaces, filters Bitcoin/BTC rows, and combines the sentiment label with the confidence score to form a signed sentiment feature. It uses the timestamp, coin, label, and score rather than the dataset's market columns:
 
 ```bash
 python preprocess_data.py btcusd_bitstamp_1min_2012-2025.csv.gz --news-file cryptovision.csv --start-date "2017-01-01" --end-date "2025-01-07 00:00:00" --output btc_with_news.npz
