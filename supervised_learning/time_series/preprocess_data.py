@@ -261,8 +261,11 @@ def load_hourly_news(path, hourly_index):
         "time",
     }
     score_aliases = {"sentiment_score", "score", "sentiment"}
+    label_aliases = {"sentiment_label", "label", "sentiment_class", "class"}
+    # Normalize spaces and hyphens so headers such as "Date Time" and
+    # "Coin Type" match the canonical aliases below.
     column_lookup = {
-        str(column).strip().lower(): column
+        str(column).strip().lower().replace(" ", "_").replace("-", "_"): column
         for column in news.columns
     }
     timestamp_column = next(
@@ -277,6 +280,14 @@ def load_hourly_news(path, hourly_index):
         (
             column_lookup[name]
             for name in score_aliases
+            if name in column_lookup
+        ),
+        None,
+    )
+    label_column = next(
+        (
+            column_lookup[name]
+            for name in label_aliases
             if name in column_lookup
         ),
         None,
@@ -328,10 +339,34 @@ def load_hourly_news(path, hourly_index):
             utc=True,
         ).dt.tz_convert(None)
 
-    news["sentiment_score"] = pd.to_numeric(
+    raw_scores = pd.to_numeric(
         news["sentiment_score"],
         errors="coerce",
     )
+    if label_column is not None:
+        # CryptoVision's score is confidence, while the label supplies the
+        # direction. Convert confidence into signed sentiment: positive > 0,
+        # negative < 0, and neutral = 0.
+        label_direction = news[label_column].astype(str).str.strip().str.lower().map(
+            {
+                "positive": 1.0,
+                "pos": 1.0,
+                "bullish": 1.0,
+                "negative": -1.0,
+                "neg": -1.0,
+                "bearish": -1.0,
+                "neutral": 0.0,
+                "neu": 0.0,
+                "stable": 0.0,
+            }
+        )
+        confidence = raw_scores.abs().clip(lower=0.0, upper=1.0)
+        news["sentiment_score"] = label_direction * confidence
+    else:
+        # Score-only files (for example, VADER output) may already contain
+        # signed sentiment values.
+        news["sentiment_score"] = raw_scores
+
     news = news.dropna(subset=["Timestamp", "sentiment_score"])
 
     if news.empty:
