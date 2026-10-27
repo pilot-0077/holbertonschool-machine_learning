@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train, evaluate, and plot a GRU model for Bitcoin price forecasting."""
+"""Train a GRU to forecast next-hour Bitcoin log returns."""
 
 import argparse
 from pathlib import Path
@@ -63,6 +63,7 @@ def load_data(path):
             "target_std",
             "timestamps",
             "feature_names",
+            "close_usd",
         }
         missing = required - set(archive.files)
         if missing:
@@ -140,7 +141,7 @@ def save_loss_plot(history, output_path):
     plt.plot(history.history["loss"], label="Training loss")
     plt.plot(history.history["val_loss"], label="Validation loss")
     plt.xlabel("Epoch")
-    plt.ylabel("Mean squared error (normalized target)")
+    plt.ylabel("Mean squared error (normalized log return)")
     plt.title("Training and Validation Loss")
     plt.legend()
     plt.grid(True, alpha=0.3)
@@ -191,25 +192,29 @@ def main():
     data = load_data(data_path)
     features = data["features"].astype(np.float32)
     target = data["target"].astype(np.float32)
+    close_usd = np.asarray(data["close_usd"], dtype=np.float64).reshape(-1)
     timestamps = np.asarray(data["timestamps"]).reshape(-1)
-    feature_names = [str(name) for name in data["feature_names"]]
     train_end = int(data["train_end"])
     validation_end = int(data["validation_end"])
 
     if features.ndim != 2:
         raise ValueError("features must be a two-dimensional array.")
-    if len(target) != len(features) or len(timestamps) != len(features):
+    if (
+        len(target) != len(features)
+        or len(timestamps) != len(features)
+        or len(close_usd) != len(features)
+    ):
         raise ValueError(
-            "features, target, and timestamps must have equal lengths."
+            "features, target, timestamps, and close_usd must have equal "
+            "lengths."
         )
-    if "Close" not in feature_names:
-        raise ValueError("The feature list must contain a Close column.")
     if train_end <= LOOKBACK_HOURS:
         raise ValueError("Training data is too short.")
     if validation_end <= train_end or validation_end >= len(features):
         raise ValueError("Validation or test split is empty.")
+    if np.any(close_usd <= 0):
+        raise ValueError("All closing prices must be positive.")
 
-    close_index = feature_names.index("Close")
     train_dataset = make_dataset(
         features,
         target,
@@ -274,36 +279,44 @@ def main():
         return_dict=True,
         verbose=0,
     )
-    predictions_scaled = model.predict(
+    predicted_returns_scaled = model.predict(
         test_dataset,
         verbose=0,
     ).reshape(-1)
-    actual_scaled = target[validation_end:]
+    actual_returns_scaled = target[validation_end:]
 
-    if len(predictions_scaled) != len(actual_scaled):
+    if len(predicted_returns_scaled) != len(actual_returns_scaled):
         raise RuntimeError(
             "Prediction count does not match the test target count."
         )
 
     target_mean = float(data["target_mean"])
     target_std = float(data["target_std"])
-    actual_usd = actual_scaled * target_std + target_mean
-    predicted_usd = predictions_scaled * target_std + target_mean
-
-    # Baseline: predict that the next close equals the previous close.
-    baseline_scaled = features[
-        validation_end - 1:len(features) - 1,
-        close_index,
-    ]
-    baseline_usd = baseline_scaled * target_std + target_mean
-
-    model_mae_usd = float(np.mean(np.abs(predicted_usd - actual_usd)))
-    model_rmse_usd = float(
-        np.sqrt(np.mean((predicted_usd - actual_usd) ** 2))
+    predicted_log_returns = (
+        predicted_returns_scaled * target_std + target_mean
     )
-    baseline_mae_usd = float(np.mean(np.abs(baseline_usd - actual_usd)))
+    actual_log_returns = actual_returns_scaled * target_std + target_mean
+
+    # Convert predicted next-hour log returns into closing-price estimates.
+    previous_close_usd = close_usd[validation_end - 1:-1]
+    actual_close_usd = close_usd[validation_end:]
+    predicted_close_usd = previous_close_usd * np.exp(
+        np.clip(predicted_log_returns, -20.0, 20.0)
+    )
+    # Naive baseline: next close equals the most recent observed close.
+    baseline_close_usd = previous_close_usd.copy()
+
+    model_mae_usd = float(
+        np.mean(np.abs(predicted_close_usd - actual_close_usd))
+    )
+    model_rmse_usd = float(
+        np.sqrt(np.mean((predicted_close_usd - actual_close_usd) ** 2))
+    )
+    baseline_mae_usd = float(
+        np.mean(np.abs(baseline_close_usd - actual_close_usd))
+    )
     baseline_rmse_usd = float(
-        np.sqrt(np.mean((baseline_usd - actual_usd) ** 2))
+        np.sqrt(np.mean((baseline_close_usd - actual_close_usd) ** 2))
     )
 
     loss_plot = plot_dir / "training_validation_loss.png"
@@ -312,9 +325,9 @@ def main():
     save_loss_plot(history, loss_plot)
     save_prediction_plot(
         timestamps[validation_end:],
-        actual_usd,
-        predicted_usd,
-        baseline_usd,
+        actual_close_usd,
+        predicted_close_usd,
+        baseline_close_usd,
         prediction_plot,
     )
     pd.DataFrame(
@@ -324,31 +337,35 @@ def main():
                 unit="s",
                 utc=True,
             ),
-            "actual_close_usd": actual_usd,
-            "gru_prediction_usd": predicted_usd,
-            "naive_baseline_usd": baseline_usd,
+            "actual_close_usd": actual_close_usd,
+            "gru_prediction_usd": predicted_close_usd,
+            "naive_baseline_usd": baseline_close_usd,
+            "actual_log_return": actual_log_returns,
+            "predicted_log_return": predicted_log_returns,
         }
     ).to_csv(predictions_csv, index=False)
 
-    print("Validation MSE (normalized): {:.6f}".format(
+    print("Target: next-hour log return.")
+    print("Validation MSE (normalized return): {:.6f}".format(
         validation_metrics["loss"]
     ))
-    print("Validation MAE (normalized): {:.6f}".format(
+    print("Validation MAE (normalized return): {:.6f}".format(
         validation_metrics["mae"]
     ))
-    print("Test MSE (normalized): {:.6f}".format(test_metrics["loss"]))
-    print("Test MAE (normalized): {:.6f}".format(test_metrics["mae"]))
-    print("Test MAE (USD): ${:,.2f}".format(model_mae_usd))
-    print("Test RMSE (USD): ${:,.2f}".format(model_rmse_usd))
-    print("Naive baseline MAE (USD): ${:,.2f}".format(baseline_mae_usd))
-    print("Naive baseline RMSE (USD): ${:,.2f}".format(
-        baseline_rmse_usd
+    print("Test MSE (normalized return): {:.6f}".format(test_metrics["loss"]))
+    print("Test MAE (normalized return): {:.6f}".format(test_metrics["mae"]))
+    print("Test MAE (USD): {} USD".format(format(model_mae_usd, ",.2f")))
+    print("Test RMSE (USD): {} USD".format(format(model_rmse_usd, ",.2f")))
+    print("Naive baseline MAE (USD): {} USD".format(
+        format(baseline_mae_usd, ",.2f")
+    ))
+    print("Naive baseline RMSE (USD): {} USD".format(
+        format(baseline_rmse_usd, ",.2f")
     ))
     print("Best model saved to: {}".format(model_path))
     print("Loss plot saved to: {}".format(loss_plot))
     print("Test prediction plot saved to: {}".format(prediction_plot))
     print("Test predictions saved to: {}".format(predictions_csv))
-
 
 if __name__ == "__main__":
     main()
