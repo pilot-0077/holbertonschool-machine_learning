@@ -4,7 +4,7 @@
 
 *My journey from raw market data to next-hour predictions using TensorFlow and GRU networks.*
 
-> **Publication note:** The market-only experiments have been run and the measured metrics are included below. Insert the generated test plots before publishing. The optional news-enhanced experiment has not been run, so this article makes no claim that news sentiment improves forecasts.
+> **Publication note:** Both market-only and news-enhanced experiments have been run and the measured metrics are included below. Insert the generated plots from the local `results` folders before publishing. In this run, adding news sentiment did not improve the test metrics.
 
 Bitcoin prices can move quickly. News, regulation, interest rates, liquidity, and investor behaviour can all influence the market. That makes Bitcoin an interesting challenge for machine learning — and a good reminder that a model's prediction is never a promise.
 
@@ -114,11 +114,15 @@ Insert `results/market_only_returns/actual_vs_predicted_test.png`. This graph co
 
 ### Graph 3: Actual versus predicted prices with news features
 
-The news-enhanced experiment has not been run, so no news-results graph is included in this version.
+Insert `results/with_news_returns/actual_vs_predicted_test.png`. The news-enhanced model's test MAE was **$225.05** and RMSE was **$355.58**, slightly worse than both the market-only GRU ($224.45 MAE, $355.06 RMSE) and the previous-close baseline ($224.78 MAE, $355.25 RMSE).
 
-Market prices alone do not capture every event. The repository therefore supports an optional experiment that adds hourly news sentiment and article counts. The provided sentiment scorer uses VADER as a simple baseline; a finance-specific sentiment model may be more suitable for a serious research project.
+### Graph 4: News-model training and validation loss
 
-The news-enhanced model must be trained and tested over the same dates and with the same chronological split as the market-only model. Only then is the comparison fair. If the news-enhanced model achieves lower held-out test error, that is evidence that the added features helped on this test period — not proof that news will always improve forecasts.
+Insert `results/with_news_returns/training_validation_loss.png` to show the news-enhanced model's training and validation loss across epochs.
+
+The news experiment adds hourly average signed sentiment and article counts to the market features. The CryptoVision file's sentiment label provides direction, while its score is treated as confidence. The confidence score is made positive for positive labels, negative for negative labels, and zero for neutral labels.
+
+On this held-out test period, the news-enhanced model did not improve the price forecasts. The result is specific to this dataset, feature construction, and GRU setup; it does not prove that news sentiment can never help.
 
 ## 6. What I learned
 
