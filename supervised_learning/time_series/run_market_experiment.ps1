@@ -39,10 +39,10 @@ if ($LASTEXITCODE -ne 0) {
     throw "Data preprocessing failed. The experiment has stopped before training."
 }
 
-& $Python forecast_btc.py --data btc_market_only.npz --model models\btc_market_only.keras --plot-dir results\market_only --epochs $Epochs --batch-size 64
+& $Python forecast_btc.py --data btc_market_only_returns.npz --model models\btc_market_only_returns.keras --plot-dir results\market_only_returns --epochs $Epochs --batch-size 64
 if ($LASTEXITCODE -ne 0) {
     throw "Model training or evaluation failed. Check the error above; no successful experiment is reported."
 }
 
 Write-Host ""
-Write-Host "Experiment complete. Check results\market_only for the plots and CSV."
+Write-Host "Experiment complete. Check results\market_only_returns for the plots and CSV."
