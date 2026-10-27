@@ -6,7 +6,7 @@ This extension compares a market-only model with a model that also receives hour
 
 Use the [CryptoVision cryptocurrency news dataset on Mendeley Data](https://data.mendeley.com/datasets/3c3xtxtfb6/2). Its published schema includes `Date_Time`, `Title`, `Coin_Type`, and `Sentiment_Score`, with cryptocurrency news from 2017–2025. The dataset is listed under CC BY 4.0; cite the authors and check the licence before redistributing any data. Download the dataset and extract the CSV file locally; do not commit the full news dataset to this repository.
 
-After downloading the data, save the relevant CSV locally. The preprocessing script accepts common timestamp and score names, including `Date_Time` and `Sentiment_Score`. If the file includes a coin/asset column, it filters for rows whose value contains Bitcoin or BTC.
+After downloading the data, save the relevant CSV locally. Header names may vary between releases: the CSV used in our test has `Date Time`, `Coin Type`, `sentiment_label`, and `sentiment_score`. The preprocessing script normalizes case, spaces, and hyphens in column names, then filters the dataset to Bitcoin/BTC rows. The dataset documentation describes `Sentiment_Score` as model confidence, not sentiment direction. When a sentiment label is present, the script converts confidence to signed sentiment: positive = +confidence, negative = -confidence, and neutral = 0. It uses the publication timestamp, coin, label, and score only; it does not use the CSV's OHLCV or `Market_Move` columns as model features.
 
 Use the same overlapping date range for both experiments. The historical Bitstamp market file covers through 7 January 2025, so the helper uses that end date by default.
 
@@ -16,7 +16,7 @@ Use the same overlapping date range for both experiments. The historical Bitstam
 
 The helper uses the same 2017-01-01 through 2025-01-07 date window and return-based target as the market-only experiment. It writes separate outputs to `btc_with_news_returns.npz`, `models/btc_with_news_returns.keras`, and `results/with_news_returns` so it does not overwrite the market-only run.
 
-Replace `cryptovision.csv` with the filename you downloaded. The preprocessing script aggregates article scores into hourly average sentiment and article count. Hours without an article in the provided dataset receive a sentiment score of 0 and a count of 0.
+Replace `cryptovision.csv` with the filename you downloaded. The preprocessing script aggregates the signed article sentiment scores into hourly average sentiment and article count. Hours without a matching article in the provided dataset receive a sentiment score of 0 and a count of 0.
 
 Check the news dataset's licence and citation requirements before using or redistributing it. A news corpus may not contain every article published during each hour, so a zero count means no matching row in that dataset, not proof that no news existed.
 
