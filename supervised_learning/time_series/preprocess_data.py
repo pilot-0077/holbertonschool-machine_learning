@@ -401,6 +401,8 @@ def scale_data(data, target_values):
         train_end,
         validation_end,
     )
+
+
 def main():
     """Prepare scale-independent market features and next-hour log returns."""
     arguments = parse_arguments()
