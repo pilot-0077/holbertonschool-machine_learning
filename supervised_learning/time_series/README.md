@@ -1,6 +1,6 @@
 # Time Series Forecasting: Bitcoin
 
-This project explores Bitcoin time-series forecasting with TensorFlow. It uses the previous 24 hours of market observations to estimate the next hourly closing price.
+This project explores Bitcoin time-series forecasting with TensorFlow. It uses the previous 24 hours of market observations to estimate the next-hour log return, then converts that estimate into a closing-price forecast.
 
 The project is an educational experiment. It does not promise accurate forecasts or investment returns.
 
@@ -87,9 +87,9 @@ The test set is not used to select the best model.
 python forecast_btc.py --data btc_market_only.npz --model models/btc_market_only.keras --plot-dir results/market_only --epochs 50 --batch-size 64
 ```
 
-The GRU model uses 24 hourly observations, two GRU layers (64 and 32 units), a dense layer with 16 neurons, and a one-value output layer. It uses the Adam optimizer, mean squared error loss, early stopping, and model checkpointing.
+The GRU model uses 24 hourly observations, two GRU layers (64 and 32 units), a dense layer with 16 neurons, and a one-value output layer. Instead of predicting the raw price level, it predicts the next-hour log return. Price-relative features and log-transformed volume features help reduce scale changes across market regimes. The predicted return is converted back into a USD closing-price estimate for evaluation. Training-only statistics are used to scale features and the target. The model uses Adam, mean squared error loss, early stopping, and model checkpointing.
 
-The script reports validation and test errors. It also converts test MAE and RMSE back to approximate USD units and compares the model with a naive baseline: predicting that the next closing price will equal the most recent closing price.
+The script reports validation and test errors on normalized log returns. It also converts forecasts back into USD closing prices and compares test MAE and RMSE with a naive baseline: predicting that the next closing price will equal the most recent closing price.
 
 The output directory contains:
 
