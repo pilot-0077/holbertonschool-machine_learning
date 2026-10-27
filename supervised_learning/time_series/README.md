@@ -124,12 +124,7 @@ The news-enhanced model's normalized test MSE was 0.352685 and normalized test M
 
 ## Experiment graphs
 
-The repository includes four SVG redraws based on the locally generated experiment plots. The original PNGs are retained in the local `results/market_only_returns` and `results/with_news_returns` folders.
-
-- [Market-only training and validation loss](market_only_returns_training_validation_loss.svg)
-- [Market-only actual vs. predicted prices](market_only_returns_actual_vs_predicted_test.svg)
-- [News-enhanced training and validation loss](with_news_returns_training_validation_loss.svg)
-- [News-enhanced actual vs. predicted prices](with_news_returns_actual_vs_predicted_test.svg)
+The experiment scripts save the original PNG charts in `results/market_only_returns` and `results/with_news_returns`. Use those files for reports and blog posts so the published figures reflect the actual model outputs. The blog draft lists the four exact filenames to insert.
 
 ## 4. Optional experiment: add news sentiment
 
