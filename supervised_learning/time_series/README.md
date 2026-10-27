@@ -99,6 +99,19 @@ The output directory contains:
 
 These files are generated from the actual run. Use their measured metrics in any report or blog post.
 
+## Observed market-only results
+
+The market-only experiment was run on the selected historical period from 2017-01-01 through 2025-01-07. The raw-price GRU and return-based GRU were evaluated against a previous-close baseline on the held-out test split.
+
+| Test metric | Raw-price GRU | Return-based GRU | Previous-close baseline |
+|---|---:|---:|---:|
+| MAE in USD | $1,827.48 | $224.45 | $224.78 |
+| RMSE in USD | $4,181.04 | $355.06 | $355.25 |
+
+The return-based GRU's normalized test MSE was 0.351838 and normalized test MAE was 0.389412. Those normalized metrics apply to the log-return target and are not directly comparable with normalized errors from the raw-price model.
+
+The return-based GRU's USD errors were only marginally lower than the baseline (MAE by $0.33 and RMSE by $0.19). Treat the model as an educational experiment, not as evidence of a meaningful forecasting advantage. The optional news-enhanced experiment has not been run, so no conclusion about news sentiment is reported.
+
 ## 4. Optional experiment: add news sentiment
 
 For the news extension, you can use a pre-scored news dataset or score your own timestamped headlines. The [CryptoVision dataset on Mendeley Data](https://data.mendeley.com/datasets/wvjjxr8bxx/2) is one possible research source; read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) for details, required columns, date alignment, and limitations.
