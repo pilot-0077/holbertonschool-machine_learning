@@ -22,6 +22,7 @@ The project is an educational experiment. It does not promise accurate forecasts
 - `requirements.txt`: Python dependencies
 - `NEWS_DATA_GUIDE.md`: format and precautions for optional news data
 - `run_market_experiment.ps1`: Windows helper to run the market-only experiment
+- `run_news_experiment.ps1`: Windows helper to run the same experiment with news sentiment
 - `BLOG_POST_DRAFT.md` and `bitcoin_forecasting_cover.svg`: blog draft and cover image
 
 ## 1. Set up the environment
@@ -114,7 +115,7 @@ The return-based GRU's USD errors were only marginally lower than the baseline (
 
 ## 4. Optional experiment: add news sentiment
 
-For the news extension, you can use a pre-scored news dataset or score your own timestamped headlines. The [CryptoVision dataset on Mendeley Data](https://data.mendeley.com/datasets/wvjjxr8bxx/2) is one possible research source; read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) for details, required columns, date alignment, and limitations.
+For the news extension, you can use a pre-scored news dataset or score your own timestamped headlines. The [CryptoVision dataset on Mendeley Data](https://data.mendeley.com/datasets/3c3xtxtfb6/2) is one possible research source; its published schema includes timestamped sentiment scores and a coin type. Read [NEWS_DATA_GUIDE.md](NEWS_DATA_GUIDE.md) for download, licence, date alignment, and limitations.
 
 If you downloaded a pre-scored dataset with `Date_Time`, `Sentiment_Score`, and a coin/asset column, you can pass it directly. The script filters Bitcoin rows when a coin/asset column is present:
 
