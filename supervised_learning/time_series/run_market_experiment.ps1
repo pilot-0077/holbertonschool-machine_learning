@@ -34,7 +34,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "Dependency installation failed. The experiment has stopped before preprocessing or training."
 }
 
-& $Python preprocess_data.py $DataFile --start-date $StartDate --end-date $EndDate --output btc_market_only.npz
+& $Python preprocess_data.py $DataFile --start-date $StartDate --end-date $EndDate --output btc_market_only_returns.npz
 if ($LASTEXITCODE -ne 0) {
     throw "Data preprocessing failed. The experiment has stopped before training."
 }
