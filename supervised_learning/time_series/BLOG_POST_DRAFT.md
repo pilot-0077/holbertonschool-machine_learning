@@ -4,7 +4,7 @@
 
 *My journey from raw market data to next-hour predictions using TensorFlow and GRU networks.*
 
-> **Draft note:** This article is not ready to publish until the real experiment has been run, the result placeholders below have been replaced, and the generated graphs have been inserted.
+> **Publication note:** The market-only experiments have been run and the measured metrics are included below. Insert the generated test plots before publishing. The optional news-enhanced experiment has not been run, so this article makes no claim that news sentiment improves forecasts.
 
 Bitcoin prices can move quickly. News, regulation, interest rates, liquidity, and investor behaviour can all influence the market. That makes Bitcoin an interesting challenge for machine learning — and a good reminder that a model's prediction is never a promise.
 
@@ -18,7 +18,7 @@ A time series is a sequence of observations collected over time. Hourly Bitcoin 
 
 Time-series forecasting uses earlier observations to estimate a future value. The order of the data matters: when predicting a future price, we must not let information from that future period leak into training.
 
-My model uses 24 consecutive hourly observations as input and predicts one value: the next hourly closing price.
+My model uses 24 consecutive hourly observations as input, predicts the next-hour log return, and converts that estimate into a closing-price forecast.
 
 For example:
 
@@ -87,34 +87,34 @@ The model architecture is:
 1. GRU layer with 64 units, returning its full sequence
 2. GRU layer with 32 units
 3. Dense layer with 16 neurons and ReLU activation
-4. Dense output layer with one predicted value
+4. Dense output layer with one predicted value: the next-hour log return
 
 I use the Adam optimizer and mean squared error (MSE) as the loss function. I also track mean absolute error (MAE). Early stopping monitors validation loss, and model checkpointing saves the best model.
 
 ## 5. Results: does the model beat a simple baseline?
 
-A model that trains successfully is not necessarily useful. To make the evaluation meaningful, I compare the GRU against a simple baseline: predict that the next closing price will equal the most recent closing price.
+A model that trains successfully is not necessarily useful. I compared two market-only GRU approaches with a simple baseline: predict that the next closing price will equal the most recent closing price. Both GRU experiments used the same chronological test period.
 
-**Replace the values below with the measured output from the actual run. Do not publish this section with placeholders.**
-
-| Test metric | Market-only GRU | GRU + news | Previous-close baseline |
+| Test metric | Raw-price GRU | Return-based GRU | Previous-close baseline |
 |---|---:|---:|---:|
-| MAE in USD | [insert result] | [insert result] | [insert result] |
-| RMSE in USD | [insert result] | [insert result] | [insert result] |
+| MAE in USD | $1,827.48 | $224.45 | $224.78 |
+| RMSE in USD | $4,181.04 | $355.06 | $355.25 |
 
-Also report the normalized test MSE and MAE from the training script. Lower error is better, but the baseline comparison matters: if the GRU cannot beat a simple previous-close prediction, the more complex model may not add practical value.
+The return-based model's normalized test MSE was **0.351838** and normalized test MAE was **0.389412**. These normalized metrics describe the log-return target and should not be compared directly with the raw-price model's normalized metrics, because the target scales differ.
+
+The return-based GRU improved substantially on the first raw-price version, but it only matched the previous-close baseline in USD terms: its MAE was lower by $0.33 (about 0.15%) and its RMSE by $0.19 (about 0.05%). These differences are too small to claim a meaningful practical advantage. The honest conclusion is that this experiment did not show that a GRU adds useful predictive value beyond a simple baseline for this test period.
 
 ### Graph 1: Training and validation loss
 
-Insert `results/market_only/training_validation_loss.png` after running the experiment. This graph helps show whether validation performance improves along with training performance or whether the model begins to overfit.
+Insert `results/market_only_returns/training_validation_loss.png` from the return-based experiment. This graph helps show whether validation performance improves along with training performance or whether the model begins to overfit.
 
 ### Graph 2: Actual versus predicted closing prices
 
-Insert `results/market_only/actual_vs_predicted_test.png`. This graph compares real test-period closing prices with the GRU predictions and the previous-close baseline.
+Insert `results/market_only_returns/actual_vs_predicted_test.png`. This graph compares real test-period closing prices with the GRU predictions and the previous-close baseline.
 
 ### Graph 3: Actual versus predicted prices with news features
 
-If the news-enhanced experiment has been run, insert `results/with_news/actual_vs_predicted_test.png` here and compare it with the market-only graph.
+The news-enhanced experiment has not been run, so no news-results graph is included in this version.
 
 Market prices alone do not capture every event. The repository therefore supports an optional experiment that adds hourly news sentiment and article counts. The provided sentiment scorer uses VADER as a simple baseline; a finance-specific sentiment model may be more suitable for a serious research project.
 
