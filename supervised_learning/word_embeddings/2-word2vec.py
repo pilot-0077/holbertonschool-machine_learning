@@ -30,6 +30,7 @@ def word2vec_model(sentences, vector_size=100, min_count=5, window=5,
         negative=negative,
         sg=0 if cbow else 1,
         seed=seed,
+        hashfxn=gensim.utils.hash,
         workers=workers,
         epochs=epochs,
     )
