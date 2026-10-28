@@ -16,3 +16,5 @@ Implements `bag_of_words(sentences, vocab=None)`, which converts a list of sente
 **Dependency:** NumPy.
 
 - **1-tf_idf.py** — implements TF-IDF embeddings using smoothed inverse document frequency and L2 normalization.
+
+- **2-word2vec.py** — creates, builds, and trains a Gensim Word2Vec model with configurable CBOW/Skip-gram settings.
