@@ -29,7 +29,7 @@ def word2vec_model(sentences, vector_size=100, min_count=5, window=5,
         window=window,
         negative=negative,
         sg=0 if cbow else 1,
-        seed=seed + 1,
+        seed=seed,
         workers=workers,
         epochs=epochs,
     )
