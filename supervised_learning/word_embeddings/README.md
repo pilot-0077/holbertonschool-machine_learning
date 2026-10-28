@@ -14,3 +14,5 @@ Implements `bag_of_words(sentences, vocab=None)`, which converts a list of sente
 - Returns the embedding matrix and the feature list.
 
 **Dependency:** NumPy.
+
+- **1-tf_idf.py** — implements TF-IDF embeddings using smoothed inverse document frequency and L2 normalization.
