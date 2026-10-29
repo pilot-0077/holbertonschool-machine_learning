@@ -302,3 +302,35 @@ encoder = RNNEncoder(1024, 128, 256, 32)
 initial = encoder.initialize_hidden_state()
 outputs, hidden = encoder(x, initial)
 ```
+
+## Self Attention
+
+File: `1-self_attention.py`
+
+### Task
+
+Implement `SelfAttention`, a subclass of `tensorflow.keras.layers.Layer`, using an additive alignment model for machine translation.
+
+The constructor accepts `units` and creates three public Dense layers:
+
+- `W`: projects the previous decoder hidden state to `units`.
+- `U`: projects each encoder hidden state to `units`.
+- `V`: maps the tanh of their sum to a single alignment score.
+
+### Forward pass
+
+1. Apply `W` to `s_prev` and expand its sequence axis.
+2. Apply `U` to `hidden_states`.
+3. Compute alignment scores with `V(tanh(W(s_prev) + U(hidden_states))`.
+4. Apply softmax over the input sequence axis to obtain attention weights.
+5. Compute the context vector as the weighted sum of the original encoder hidden states.
+
+### Output shapes
+
+- Previous decoder state: `(batch, units)`
+- Encoder hidden states: `(batch, input_seq_len, units)`
+- Context vector: `(batch, units)`
+- Attention weights: `(batch, input_seq_len, 1)`
+
+The attention weights sum to 1 over the input sequence for each batch item.
+
