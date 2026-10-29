@@ -352,8 +352,8 @@ The constructor `RNNDecoder(vocab, embedding, units, batch)` creates:
 ### Forward pass
 
 1. Use attention to calculate a context vector from `s_prev` and `hidden_states`.
-2. Embed the previous target token `x`.
-3. Expand the context vector along the sequence axis and concatenate it before the embedded token vector.
+2. Cast the previous target token index `x` to the context vector's data type.
+3. Concatenate the context vector with `x`, in that order, and add a sequence axis.
 4. Run the combined input through the GRU, using `s_prev` as its initial state.
 5. Apply `F` to the GRU output to produce target-vocabulary scores.
 
