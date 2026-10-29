@@ -26,8 +26,8 @@ class RNNDecoder(tf.keras.layers.Layer):
 
     def call(self, x, s_prev, hidden_states):
         """Return output scores and the updated decoder state."""
-        embedded = self.embedding(x)
         context, _ = self.attention(s_prev, hidden_states)
+        embedded = self.embedding(x)
         context = tf.expand_dims(context, axis=1)
         decoder_input = tf.concat([context, embedded], axis=-1)
         outputs, state = self.gru(
