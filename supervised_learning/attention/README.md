@@ -93,3 +93,30 @@ If `mask` is supplied, it is cast to the score tensor's data type and added as `
 - `output`: `(..., seq_len_q, dv)`
 
 The softmax is applied over the final axis so each query's attention weights sum to 1 across the key/value sequence.
+
+## Multi-Head Attention
+
+File: `6-multihead_attention.py`
+
+### Task
+
+Implement the `MultiHeadAttention` class as a subclass of `tensorflow.keras.layers.Layer`.
+
+The constructor accepts `dm` (model dimensionality) and `h` (number of attention heads), where `dm` must be divisible by `h`. Each head has depth `dm // h`.
+
+The layer exposes `h`, `dm`, `depth`, `Wq`, `Wk`, `Wv`, and `linear`. The three first Dense layers project the inputs into query, key, and value representations; `linear` projects the concatenated attention output.
+
+### Processing steps
+
+1. Project `Q`, `K`, and `V` through their respective Dense layers.
+2. Reshape each projection to split the model depth into `h` heads.
+3. Transpose the tensors to shape `(batch, h, sequence_length, depth)`.
+4. Call `sdp_attention` from `5-sdp_attention.py`.
+5. Transpose and concatenate the heads, then apply the final Dense layer.
+
+### Output shapes
+
+- Output: `(batch, seq_len_q, dm)`
+- Attention weights: `(batch, h, seq_len_q, seq_len_v)`
+
+For the task's example, `MultiHeadAttention(512, 8)` has `depth = 64`.
