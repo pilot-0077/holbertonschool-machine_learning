@@ -97,3 +97,35 @@ print(type(data.tokenizer_pt))
 print(type(data.tokenizer_en))
 ```
 
+## Task 1: Encode Tokens
+
+File: `1-dataset.py`
+
+### Task
+
+Extend the `Dataset` class with `encode(pt, en)`, which converts a Portuguese sentence and its English translation into token ID lists.
+
+The class loads the train and validation splits with `load_pt2en` and trains tokenizers on the training split:
+
+- Portuguese: `neuralmind/bert-base-portuguese-cased`
+- English: `bert-base-uncased`
+- Maximum vocabulary size for each newly trained tokenizer: `2 ** 13`
+
+### Encoding behavior
+
+For each sentence, decode the `tf.Tensor` from UTF-8 bytes into text and tokenize it with `add_special_tokens=False`. Then add the task-specific boundary tokens:
+
+- Start token: `tokenizer.vocab_size`
+- End token: `tokenizer.vocab_size + 1`
+
+The method returns `pt_tokens, en_tokens` as two Python lists. Portuguese and English use their own tokenizer vocabulary sizes.
+
+### Example
+
+```python
+for pt, en in data.data_train.take(1):
+    pt_tokens, en_tokens = data.encode(pt, en)
+    print(pt_tokens)
+    print(en_tokens)
+```
+
