@@ -260,3 +260,45 @@ Input source: `(batch, input_seq_len)`
 Input target: `(batch, target_seq_len)`
 
 Output: `(batch, target_seq_len, target_vocab)`
+
+# RNN Encoder
+
+File: `0-rnn_encoder.py`
+
+## Task
+
+Implement `RNNEncoder`, a subclass of `tensorflow.keras.layers.Layer`, to encode source token sequences for machine translation.
+
+The constructor `RNNEncoder(vocab, embedding, units, batch)` creates these public attributes:
+
+- `batch`: batch size.
+- `units`: number of GRU hidden units.
+- `embedding`: a Keras Embedding layer with `vocab` entries and embedding dimension `embedding`.
+- `gru`: a Keras GRU layer with `units` units, `recurrent_initializer='glorot_uniform'`, `return_sequences=True`, and `return_state=True`.
+
+## Methods
+
+### `initialize_hidden_state()`
+
+Returns a zero tensor of shape `(batch, units)`.
+
+### `call(x, initial)`
+
+1. Convert input token IDs into embedding vectors.
+2. Pass the embeddings and `initial` hidden state to the GRU.
+3. Return `outputs, hidden`.
+
+## Tensor shapes
+
+- Input token IDs: `(batch, input_seq_len)`
+- Initial hidden state: `(batch, units)`
+- Outputs: `(batch, input_seq_len, units)`
+- Final hidden state: `(batch, units)`
+
+## Example
+
+```python
+encoder = RNNEncoder(1024, 128, 256, 32)
+initial = encoder.initialize_hidden_state()
+outputs, hidden = encoder(x, initial)
+```
