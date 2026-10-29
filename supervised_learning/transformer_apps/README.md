@@ -51,3 +51,49 @@ and prefetching to prepare input efficiently.
 
 - GitHub repository: `pilot-0077/holbertonschool-machine_learning`
 - Directory: `supervised_learning/transformer_apps`
+
+## Task 0: Dataset
+
+File: `0-dataset.py`
+
+### Purpose
+
+Implement the `Dataset` class for Portuguese-to-English machine translation using the TED Talks parallel corpus.
+
+### Dataset setup prerequisite
+
+The original TFDS source archive is offline. Before running the task, follow the project instructions to:
+
+1. Download and extract the dataset archive into `~/.cache/ted_hrlr/`.
+2. Download `setup.py` to the root of the project (next to the numbered task files).
+3. Install the required packages, including `transformers==4.44.2` and `tensorflow-datasets==4.9.2`, as specified by the provided setup instructions.
+
+The helper `load_pt2en(split)` from `setup.py` replaces the old `tfds.load('ted_hrlr_translate/pt_to_en', split=split, as_supervised=True)` call and returns a `tf.data.Dataset` of Portuguese/English string pairs.
+
+### Implementation
+
+The constructor initializes:
+
+- `data_train` with `load_pt2en('train')`.
+- `data_valid` with `load_pt2en('validation')`.
+- `tokenizer_pt` and `tokenizer_en` by calling `tokenize_dataset(data_train)`.
+
+The `tokenize_dataset(data)` method:
+
+1. Reads the Portuguese and English text pairs from `data`.
+2. Decodes each byte string as UTF-8.
+3. Loads `neuralmind/bert-base-portuguese-cased` for Portuguese and `bert-base-uncased` for English.
+4. Trains new tokenizers from the training corpus with a vocabulary size of `2 ** 13`.
+5. Returns the Portuguese and English tokenizers, in that order.
+
+### Example
+
+```python
+Dataset = __import__('0-dataset').Dataset
+
+data = Dataset()
+print(type(data.data_train))
+print(type(data.tokenizer_pt))
+print(type(data.tokenizer_en))
+```
+
