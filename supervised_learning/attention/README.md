@@ -234,3 +234,29 @@ Input target token IDs: `(batch, target_seq_len)`
 Output: `(batch, target_seq_len, dm)`
 
 Each element of `blocks` must be a distinct `DecoderBlock` instance.
+
+## Transformer Network
+
+File: `11-transformer.py`
+
+### Task
+
+Implement `Transformer`, a subclass of `tensorflow.keras.Model`, with an encoder, decoder, and final Dense layer:
+
+- `encoder`: an `Encoder` configured with `N`, `dm`, `h`, `hidden`, `input_vocab`, and `max_seq_input`.
+- `decoder`: a `Decoder` configured with `N`, `dm`, `h`, `hidden`, `target_vocab`, and `max_seq_target`.
+- `linear`: a Dense layer with `target_vocab` output units.
+
+### Forward pass
+
+1. Encode the source token IDs using `encoder_mask`.
+2. Pass target token IDs and the encoder output to the decoder, along with `look_ahead_mask` and `decoder_mask`.
+3. Apply the final Dense layer to decoder outputs to produce target-vocabulary logits.
+
+### Output shape
+
+Input source: `(batch, input_seq_len)`
+
+Input target: `(batch, target_seq_len)`
+
+Output: `(batch, target_seq_len, target_vocab)`
