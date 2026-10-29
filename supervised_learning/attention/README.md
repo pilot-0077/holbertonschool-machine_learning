@@ -340,22 +340,21 @@ File: `2-rnn_decoder.py`
 
 ### Task
 
-Implement `RNNDecoder`, a subclass of `tensorflow.keras.layers.Layer`, to generate the next target-token scores using a GRU and the encoder's hidden states.
+Implement `RNNDecoder`, a subclass of `tensorflow.keras.layers.Layer`, to generate target-vocabulary scores using a GRU and attention.
 
 The constructor `RNNDecoder(vocab, embedding, units, batch)` creates:
 
 - `embedding`: Embedding layer mapping target token IDs to vectors.
 - `gru`: GRU with `units` hidden units, `recurrent_initializer='glorot_uniform'`, `return_sequences=True`, and `return_state=True`.
 - `F`: Dense layer with `vocab` output units.
-- An attention layer using `SelfAttention(units)` from `1-self_attention.py`.
 
 ### Forward pass
 
-1. Use attention to calculate a context vector from `s_prev` and `hidden_states`.
+1. Create a `SelfAttention` layer and calculate a context vector from `s_prev` and `hidden_states`.
 2. Embed the previous target token `x`.
 3. Expand the context vector along the sequence axis and concatenate it before the embedded token along the feature axis.
 4. Run the combined input through the GRU, using `s_prev` as its initial state.
-5. Apply `F` to the GRU output to produce target-vocabulary scores.
+5. Apply `F` to the GRU output and remove the one-step sequence axis.
 
 ### Output shapes
 
@@ -365,4 +364,4 @@ The constructor `RNNDecoder(vocab, embedding, units, batch)` creates:
 - Output scores `y`: `(batch, vocab)`
 - Updated hidden state `s`: `(batch, units)`
 
-The Dense output contains vocabulary scores (logits); it is not a one-hot encoded vector.
+The Dense output contains vocabulary scores (logits), not a one-hot encoded vector.
