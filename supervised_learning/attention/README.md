@@ -202,3 +202,35 @@ Input token IDs: `(batch, input_seq_len)`
 Output: `(batch, input_seq_len, dm)`
 
 Each entry in `blocks` must be a distinct layer instance; do not create the list by multiplying a single layer instance.
+
+## Transformer Decoder
+
+File: `10-transformer_decoder.py`
+
+### Task
+
+Implement `Decoder`, a subclass of `tensorflow.keras.layers.Layer`, with:
+
+- `N`: number of decoder blocks.
+- `dm`: model dimensionality.
+- `embedding`: target token embedding layer.
+- `positional_encoding`: NumPy array with shape `(max_seq_len, dm)`.
+- `blocks`: a list of `N` independently constructed `DecoderBlock` instances.
+- `dropout`: dropout layer applied after positional encodings are added.
+
+### Forward pass
+
+1. Embed target token IDs.
+2. Scale the embeddings by `sqrt(dm)`.
+3. Add positional encodings up to the target sequence length.
+4. Apply dropout.
+5. Pass the sequence through every decoder block, forwarding the encoder output, training flag, look-ahead mask, and padding mask.
+6. Return the decoder output.
+
+### Output shape
+
+Input target token IDs: `(batch, target_seq_len)`
+
+Output: `(batch, target_seq_len, dm)`
+
+Each element of `blocks` must be a distinct `DecoderBlock` instance.
