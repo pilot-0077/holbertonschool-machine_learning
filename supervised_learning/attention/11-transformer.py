@@ -1,52 +1,65 @@
 #!/usr/bin/env python3
-"""
-class transformer
-"""
+"""Transformer network."""
 import tensorflow as tf
+
 Encoder = __import__('9-transformer_encoder').Encoder
 Decoder = __import__('10-transformer_decoder').Decoder
 
 
 class Transformer(tf.keras.Model):
-    """
-    class Transformer
-    """
-    def __init__(self, N, dm, h, hidden, input_vocab, target_vocab,
-                 max_seq_input, max_seq_target, drop_rate=0.1):
+    """Create a Transformer encoder-decoder network."""
+
+    def __init__(
+        self, N, dm, h, hidden, input_vocab, target_vocab,
+        max_seq_input, max_seq_target, drop_rate=0.1
+    ):
+        """Initialize the Transformer model.
+
+        Args:
+            N: Number of encoder and decoder blocks.
+            dm: Dimensionality of the model.
+            h: Number of attention heads.
+            hidden: Number of units in the feed-forward layers.
+            input_vocab: Size of the input vocabulary.
+            target_vocab: Size of the target vocabulary.
+            max_seq_input: Maximum input sequence length.
+            max_seq_target: Maximum target sequence length.
+            drop_rate: Dropout rate.
         """
-        Parameters
-        ----------
-        encoder - the encoder layer
-        decoder - the decoder layer
-        linear - a final Dense layer with target_vocab units
-        Returns
-        -------
-        None.
-        """
-        super(Transformer, self).__init__()
-        self.encoder = Encoder(N, dm, h, hidden, input_vocab, max_seq_input,
-                               drop_rate)
-        self.decoder = Decoder(N, dm, h, hidden, target_vocab, max_seq_target,
-                               drop_rate)
+        super().__init__()
+        self.encoder = Encoder(
+            N, dm, h, hidden, input_vocab, max_seq_input, drop_rate
+        )
+        self.decoder = Decoder(
+            N, dm, h, hidden, target_vocab, max_seq_target, drop_rate
+        )
         self.linear = tf.keras.layers.Dense(units=target_vocab)
 
-    def call(self, inputs, target, training, encoder_mask,
-             look_ahead_mask, decoder_mask):
+    def call(
+        self, inputs, target, training, encoder_mask,
+        look_ahead_mask, decoder_mask
+    ):
+        """Run the encoder-decoder Transformer.
+
+        Args:
+            inputs: Source token IDs of shape (batch, input_seq_len).
+            target: Target token IDs of shape (batch, target_seq_len).
+            training: Whether the model is training.
+            encoder_mask: Padding mask for encoder self-attention.
+            look_ahead_mask: Look-ahead mask for decoder self-attention.
+            decoder_mask: Padding mask for encoder-decoder attention.
+
+        Returns:
+            Logits of shape (batch, target_seq_len, target_vocab).
         """
-        inputs - a tensor of shape (batch, input_seq_len, dm) containing
-        the inputs
-        target - a tensor of shape (batch, target_seq_len, dm)containing
-        the target
-        training - a boolean to determine if the model is training
-        encoder_mask - the padding mask to be applied to the encoder
-        look_ahead_mask - the look ahead mask to be applied to the decoder
-        decoder_mask - the padding mask to be applied to the decoder
-        Returns: a tensor of shape (batch, target_seq_len, target_vocab)
-        containing the transformer output
-        """
-        encoder_output = self.encoder(inputs, training, encoder_mask)
-        decoder_output = self.decoder(target, encoder_output, training,
-                                      look_ahead_mask,
-                                      decoder_mask)
-        output = self.linear(decoder_output)
-        return output
+        encoder_output = self.encoder(
+            inputs, training=training, mask=encoder_mask
+        )
+        decoder_output = self.decoder(
+            target,
+            encoder_output,
+            training=training,
+            look_ahead_mask=look_ahead_mask,
+            padding_mask=decoder_mask
+        )
+        return self.linear(decoder_output)
