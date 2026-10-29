@@ -147,3 +147,26 @@ Implement `EncoderBlock`, a subclass of `tensorflow.keras.layers.Layer`. The con
 Input: `(batch, input_seq_len, dm)`
 
 Output: `(batch, input_seq_len, dm)`
+
+## Transformer Decoder Block
+
+File: `8-transformer_decoder_block.py`
+
+### Task
+
+Implement `DecoderBlock`, a subclass of `tensorflow.keras.layers.Layer`, with two multi-head attention layers, a feed-forward network, three dropout layers, and three layer normalization layers.
+
+### Forward pass
+
+1. Apply masked self-attention to `x` using `look_ahead_mask`.
+2. Apply `dropout1`, add the residual input `x`, and normalize with `layernorm1`.
+3. Apply encoder-decoder attention using the first sublayer output as query and `encoder_output` as key and value, with `padding_mask`.
+4. Apply `dropout2`, add the residual connection, and normalize with `layernorm2`.
+5. Pass the result through `dense_hidden` (ReLU) and `dense_output`.
+6. Apply `dropout3`, add the second residual connection, and normalize with `layernorm3`.
+
+### Output shape
+
+Input target: `(batch, target_seq_len, dm)`
+
+Output: `(batch, target_seq_len, dm)`
