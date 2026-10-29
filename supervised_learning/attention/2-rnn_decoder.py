@@ -45,9 +45,9 @@ class RNNDecoder(tf.keras.layers.Layer):
             s: Updated decoder hidden state, shape (batch, units).
         """
         context, _ = self.attention(s_prev, hidden_states)
-        x = tf.cast(x, context.dtype)
-        decoder_input = tf.concat([context, x], axis=1)
-        decoder_input = tf.expand_dims(decoder_input, axis=1)
+        embedded = self.embedding(x)
+        context = tf.expand_dims(context, axis=1)
+        decoder_input = tf.concat([context, embedded], axis=-1)
         outputs, state = self.gru(
             decoder_input,
             initial_state=s_prev
