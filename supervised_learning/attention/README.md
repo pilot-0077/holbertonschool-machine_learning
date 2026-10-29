@@ -347,13 +347,13 @@ The constructor `RNNDecoder(vocab, embedding, units, batch)` creates:
 - `embedding`: Embedding layer mapping target token IDs to vectors.
 - `gru`: GRU with `units` hidden units, `recurrent_initializer='glorot_uniform'`, `return_sequences=True`, and `return_state=True`.
 - `F`: Dense layer with `vocab` output units.
-- An attention layer using the `SelfAttention` class from `1-self_attention.py`.
+- An attention layer using `SelfAttention(units)` from `1-self_attention.py`.
 
 ### Forward pass
 
 1. Use attention to calculate a context vector from `s_prev` and `hidden_states`.
-2. Cast the previous target token index `x` to the context vector's data type.
-3. Concatenate the context vector with `x`, in that order, and add a sequence axis.
+2. Embed the previous target token `x`.
+3. Expand the context vector along the sequence axis and concatenate it before the embedded token along the feature axis.
 4. Run the combined input through the GRU, using `s_prev` as its initial state.
 5. Apply `F` to the GRU output to produce target-vocabulary scores.
 
@@ -366,4 +366,3 @@ The constructor `RNNDecoder(vocab, embedding, units, batch)` creates:
 - Updated hidden state `s`: `(batch, units)`
 
 The Dense output contains vocabulary scores (logits); it is not a one-hot encoded vector.
-
