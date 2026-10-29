@@ -22,20 +22,18 @@ class RNNDecoder(tf.keras.layers.Layer):
             return_state=True
         )
         self.F = tf.keras.layers.Dense(units=vocab)
+        self.attention = SelfAttention(units)
 
     def call(self, x, s_prev, hidden_states):
         """Return output scores and the updated decoder state."""
-        attention = SelfAttention(s_prev.shape[-1])
-        context, _ = attention(s_prev, hidden_states)
-
         embedded = self.embedding(x)
+        context, _ = self.attention(s_prev, hidden_states)
         context = tf.expand_dims(context, axis=1)
         decoder_input = tf.concat([context, embedded], axis=-1)
-
         outputs, state = self.gru(
             decoder_input,
             initial_state=s_prev
         )
-        outputs = tf.squeeze(outputs, axis=1)
-        y = self.F(outputs)
+        outputs = self.F(outputs)
+        y = tf.squeeze(outputs, axis=1)
         return y, state
