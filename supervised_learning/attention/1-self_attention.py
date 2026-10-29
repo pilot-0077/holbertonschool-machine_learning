@@ -1,50 +1,38 @@
 #!/usr/bin/env python3
-"""
-Create a class SelfAttention that inherits from tensorflow.keras.layers.Layer
-to calculate the attention for machine translation based on this paper:
-"""
+"""Self-attention for machine translation."""
 import tensorflow as tf
 
 
 class SelfAttention(tf.keras.layers.Layer):
-    """Class RNNEncoder"""
+    """Calculate Bahdanau-style attention over encoder hidden states."""
+
     def __init__(self, units):
-        """ Constructor
-        units is an integer representing the number of hidden units in the
-        alignment model
-        Sets the following public instance attributes:
-        W - a Dense layer with units units, to be applied to the previous
-        decoder hidden state
-        U - a Dense layer with units units, to be applied to the encoder
-        hidden states
-        V - a Dense layer with 1 units, to be applied to the tanh of the sum
-        of the outputs of W and U
+        """Initialize the alignment model.
+
+        Args:
+            units: Number of hidden units in the alignment model.
         """
-        super(SelfAttention, self).__init__()
+        super().__init__()
         self.W = tf.keras.layers.Dense(units=units)
         self.U = tf.keras.layers.Dense(units=units)
         self.V = tf.keras.layers.Dense(units=1)
 
     def call(self, s_prev, hidden_states):
-        """
-        Parameters
-        ----------
-        s_prev is a tensor of shape (batch, units) containing the previous
-        decoder hidden state
-        hidden_states is a tensor of shape (batch, input_seq_len, units)
-        containing the outputs of the encoder
+        """Return the context vector and attention weights.
 
-        Returns
-        -------
-        context is a tensor of shape (batch, units) that contains the context
-        vector for the decoder
-        weights is a tensor of shape (batch, input_seq_len, 1) that contains
-        the attention weights
+        Args:
+            s_prev: Previous decoder state, shape (batch, units).
+            hidden_states: Encoder outputs, shape
+                (batch, input_seq_len, units).
+
+        Returns:
+            context: Weighted encoder states, shape (batch, units).
+            weights: Attention weights, shape
+                (batch, input_seq_len, 1).
         """
-        mul1 = self.W(s_prev)
-        mul1 = tf.expand_dims(mul1, 1)
-        mul2 = self.U(hidden_states)
-        weights = self.V(tf.tanh(tf.math.add(mul1, mul2)))
-        outputs = tf.matmul(mul2, tf.nn.softmax(weights), transpose_a=True)
-        outputs = tf.math.reduce_sum(outputs, axis=2)
-        return(outputs, weights)
+        decoder_state = tf.expand_dims(self.W(s_prev), axis=1)
+        encoder_states = self.U(hidden_states)
+        alignment = self.V(tf.tanh(decoder_state + encoder_states))
+        weights = tf.nn.softmax(alignment, axis=1)
+        context = tf.reduce_sum(weights * hidden_states, axis=1)
+        return context, weights
