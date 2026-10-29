@@ -32,7 +32,7 @@ class RNNDecoder(tf.keras.layers.Layer):
         self.attention = SelfAttention(units)
 
     def call(self, x, s_prev, hidden_states):
-        """Return output vocabulary scores and the updated hidden state.
+        """Return vocabulary scores and the updated decoder state.
 
         Args:
             x: Previous target token IDs, shape (batch, 1).
@@ -41,13 +41,13 @@ class RNNDecoder(tf.keras.layers.Layer):
                 (batch, input_seq_len, units).
 
         Returns:
-            y: Output scores, shape (batch, vocab).
+            y: Vocabulary scores, shape (batch, vocab).
             s: Updated decoder hidden state, shape (batch, units).
         """
         context, _ = self.attention(s_prev, hidden_states)
-        x = tf.cast(x, context.dtype)
-        decoder_input = tf.concat([context, x], axis=1)
-        decoder_input = tf.expand_dims(decoder_input, axis=1)
+        embedded = self.embedding(x)
+        context = tf.expand_dims(context, axis=1)
+        decoder_input = tf.concat([context, embedded], axis=-1)
         outputs, state = self.gru(
             decoder_input,
             initial_state=s_prev
