@@ -65,10 +65,10 @@ Implement the `Dataset` class for Portuguese-to-English machine translation usin
 The original TFDS source archive is offline. Before running the task, follow the project instructions to:
 
 1. Download and extract the dataset archive into `~/.cache/ted_hrlr/`.
-2. Download `setup.py` to the root of the project (next to the numbered task files).
-3. Install the required packages, including `transformers==4.44.2` and `tensorflow-datasets==4.9.2`, as specified by the provided setup instructions.
+2. The `setup.py` helper is included in this directory next to the numbered task files.
+3. Install the required packages, including `transformers==4.44.2` and `tensorflow-datasets==4.9.2`, as specified by the project setup instructions.
 
-The helper `load_pt2en(split)` from `setup.py` replaces the old `tfds.load('ted_hrlr_translate/pt_to_en', split=split, as_supervised=True)` call and returns a `tf.data.Dataset` of Portuguese/English string pairs.
+The helper `load_pt2en(split)` from `setup.py` replaces the old `tfds.load('ted_hrlr_translate/pt_to_en', split=split, as_supervised=True)` call and returns a `tf.data.Dataset` of Portuguese/English string pairs. It reads the extracted files under `~/.cache/ted_hrlr/datasets/pt_to_en/`.
 
 ### Implementation
 
