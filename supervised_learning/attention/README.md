@@ -120,3 +120,30 @@ The layer exposes `h`, `dm`, `depth`, `Wq`, `Wk`, `Wv`, and `linear`. The three 
 - Attention weights: `(batch, h, seq_len_q, seq_len_v)`
 
 For the task's example, `MultiHeadAttention(512, 8)` has `depth = 64`.
+
+## Transformer Encoder Block
+
+File: `7-transformer_encoder_block.py`
+
+### Task
+
+Implement `EncoderBlock`, a subclass of `tensorflow.keras.layers.Layer`. The constructor takes `dm`, `h`, `hidden`, and `drop_rate=0.1`, and creates:
+
+- `mha`: a `MultiHeadAttention` layer.
+- `dense_hidden`: Dense layer with `hidden` units and ReLU activation.
+- `dense_output`: Dense layer with `dm` units.
+- `layernorm1` and `layernorm2`: LayerNormalization layers with `epsilon=1e-6`.
+- `dropout1` and `dropout2`: Dropout layers using `drop_rate`.
+
+### Forward pass
+
+1. Apply multi-head self-attention to `x` as query, key, and value.
+2. Apply dropout, add the original input (residual connection), then apply layer normalization.
+3. Pass the result through the two feed-forward Dense layers.
+4. Apply dropout, add the second residual connection, then apply the second layer normalization.
+
+### Output shape
+
+Input: `(batch, input_seq_len, dm)`
+
+Output: `(batch, input_seq_len, dm)`
