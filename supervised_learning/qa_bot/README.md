@@ -71,3 +71,13 @@ vectors. It normalizes the vectors, computes cosine similarity, and returns
 the full text of the most similar document. Corpus files are processed in
 sorted filename order, hidden files and directories are skipped, and empty
 documents are ignored. The model is loaded once and reused across calls.
+
+## Task 4: Multi-reference Question Answering
+
+The `4-qa.py` module defines `question_answer(corpus_path)`, an
+interactive QA loop over a directory of reference documents. For each
+question, it uses `semantic_search` from `3-semantic_search.py` to select
+the most relevant document, then uses `question_answer` from `0-qa.py` to
+extract an answer from that document. If no document or answer is found, it
+prints `Sorry, I do not understand your question.`. The commands `exit`,
+`quit`, `goodbye`, and `bye` end the session with `A: Goodbye`.
