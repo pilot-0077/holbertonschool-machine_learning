@@ -1,28 +1,24 @@
 #!/usr/bin/env python3
-"""Script to train a model using keras"""
-
+"""4-train.py
+"""
 import tensorflow.keras as K
 
 
 def train_model(network, data, labels, batch_size, epochs,
                 verbose=True, shuffle=False):
-    """
-    Function to train a model using keras
+    """train_model - trains a model using mini-batch gradient descent
     Args:
-        network: model to train
-        data: numpy.ndarray of shape (m, nx) containing the input data
-        labels: one-hot numpy.ndarray of shape (m, classes) containing
-                the labels of data
-        batch_size: size of the batch used for mini-batch gradient descent
-        epochs: number of passes through data for mini-batch gradient descent
-        verbose: boolean that determines if output should be printed during
-                 training
-        shuffle: boolean that determines whether to shuffle the batches every
-                 epoch.
-    Returns: History object generated after training the model
-
+        network: is the model to train
+        data: is a numpy.ndarray of shape (m, nx) containing the input data
+            where m is the number of data points and nx is the number of
+            features
+        labels: is a one-hot numpy.ndarray of shape (m, classes) containing
+            the labels of data where classes is the number of classes
+        batch_size: is the number of data points in a batch
+        epochs: is the number of passes through data for mini-batch gradient
+            descent
+    Returns:
+        the History object generated after training the model
     """
-    history = network.fit(data, labels, epochs=epochs,
-                          batch_size=batch_size, verbose=verbose,
-                          shuffle=shuffle)
-    return history
+    return network.fit(x=data, y=labels, batch_size=batch_size,
+                       epochs=epochs, verbose=verbose, shuffle=shuffle)
