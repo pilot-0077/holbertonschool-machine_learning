@@ -44,3 +44,11 @@ below the configured confidence threshold.
 
 The first call downloads the TensorFlow Hub model and tokenizer assets if
 they are not already cached locally.
+
+## Task 1: Create the Loop
+
+The `1-loop.py` script repeatedly prompts the user with `Q: ` and prints
+`A: ` after each ordinary input. The commands `exit`, `quit`, `goodbye`,
+and `bye` terminate the loop regardless of letter case and print
+`A: Goodbye`. Leading or trailing whitespace around a quit command is
+ignored. The script also exits cleanly when standard input reaches EOF.
