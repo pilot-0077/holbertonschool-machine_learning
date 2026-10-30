@@ -27,3 +27,20 @@ sentence = ["there", "is", "a", "cat", "here"]
 print(uni_bleu(references, sentence))
 # 0.6549846024623855
 ```
+
+## 1. N-gram BLEU score
+
+**File:** `1-ngram_bleu.py`
+
+Implements `ngram_bleu(references, sentence, n)`, calculating modified precision for candidate n-grams of size `n`, clipping counts to the maximum count in any reference, and applying the BLEU brevity penalty using the closest reference length (shorter reference wins a tie).
+
+Formula: `N-gram BLEU = brevity_penalty * clipped_n_gram_precision`.
+
+Example:
+
+```python
+references = [["the", "cat", "is", "on", "the", "mat"], ["there", "is", "a", "cat", "on", "the", "mat"]]
+sentence = ["there", "is", "a", "cat", "here"]
+print(ngram_bleu(references, sentence, 2))
+# 0.6140480648084865
+```
