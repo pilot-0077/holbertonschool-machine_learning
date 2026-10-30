@@ -62,3 +62,12 @@ When no answer is returned, the loop prints
 `Sorry, I do not understand your question.`. The commands `exit`,
 `quit`, `goodbye`, and `bye` are accepted case-insensitively and end
 the session with `A: Goodbye`.
+
+## Task 3: Semantic Search
+
+The `3-semantic_search.py` module uses TensorFlow Hub's Universal Sentence
+Encoder to represent the query sentence and each document as embedding
+vectors. It normalizes the vectors, computes cosine similarity, and returns
+the full text of the most similar document. Corpus files are processed in
+sorted filename order, hidden files and directories are skipped, and empty
+documents are ignored. The model is loaded once and reused across calls.
