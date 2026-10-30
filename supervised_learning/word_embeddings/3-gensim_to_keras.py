@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """
-Gets the converts the gensim word2vec model to a keras layer:
-
-model is a trained gensim word2vec models
-Returns: the trainable keras Embedding
+    Extract Word2Vec
 """
-import gensim
-import tensorflow.keras as K
+import tensorflow as tf
 
 
 def gensim_to_keras(model):
-    """ creates and trains a gensim word2vec model
     """
-    keras_model = K.models.Sequential()
-    keras_model.add(model.wv.get_keras_embedding(train_embeddings=False))
-    return (keras_model)
+    Converts a gensim word2vec model to a keras Embedding layer.
+
+    Args:
+        model: Trained gensim word2vec model.
+
+    Returns:
+        trainable keras Embedding layer.
+    """
+    weights = model.wv.vectors
+
+    return tf.keras.layers.Embedding(
+        input_dim=weights.shape[0],
+        output_dim=weights.shape[1],
+        weights=[weights],
+        trainable=True
+    )
