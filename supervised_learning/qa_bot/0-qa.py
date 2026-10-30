@@ -141,15 +141,13 @@ def question_answer(question, reference):
         end_probabilities = tf.nn.softmax(end_logits).numpy()
 
         context_end = context_start + len(context_chunk)
-        max_end = min(
-            context_end,
-            context_start + MAX_ANSWER_LENGTH
-        )
-
         # Search only positions belonging to the reference, never the
         # question, special tokens, or padding.
         for start_index in range(context_start, context_end):
-            end_limit = min(max_end, start_index + MAX_ANSWER_LENGTH)
+            end_limit = min(
+                context_end,
+                start_index + MAX_ANSWER_LENGTH + 1
+            )
             for end_index in range(start_index, end_limit):
                 confidence = (
                     float(start_probabilities[start_index]) *
