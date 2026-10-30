@@ -44,3 +44,24 @@ sentence = ["there", "is", "a", "cat", "here"]
 print(ngram_bleu(references, sentence, 2))
 # 0.6140480648084865
 ```
+
+## 2. Cumulative N-gram BLEU score
+
+**File:** `2-cumulative_bleu.py`
+
+Implements `cumulative_bleu(references, sentence, n)`. It calculates clipped modified precision for every n-gram order from 1 through `n`, combines those precisions using an equally weighted geometric mean, and applies the brevity penalty once.
+
+Formula:
+
+`Cumulative BLEU = BP * exp((log(p1) + ... + log(pn)) / n)`
+
+If any n-gram precision is zero, the cumulative score is zero.
+
+Example:
+
+```python
+references = [["the", "cat", "is", "on", "the", "mat"], ["there", "is", "a", "cat", "on", "the", "mat"]]
+sentence = ["there", "is", "a", "cat", "here"]
+print(cumulative_bleu(references, sentence, 4))
+# 0.5475182535069453
+```
