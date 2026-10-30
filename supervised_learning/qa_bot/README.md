@@ -52,3 +52,13 @@ The `1-loop.py` script repeatedly prompts the user with `Q: ` and prints
 and `bye` terminate the loop regardless of letter case and print
 `A: Goodbye`. Leading or trailing whitespace around a quit command is
 ignored. The script also exits cleanly when standard input reaches EOF.
+
+## Task 2: Answer Questions
+
+The `2-qa.py` module defines `answer_loop(reference)`, an interactive
+question-answering loop built on the `question_answer` function from
+`0-qa.py`. Each question is answered using the supplied reference text.
+When no answer is returned, the loop prints
+`Sorry, I do not understand your question.`. The commands `exit`,
+`quit`, `goodbye`, and `bye` are accepted case-insensitively and end
+the session with `A: Goodbye`.
