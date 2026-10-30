@@ -156,3 +156,37 @@ After loading the raw training and validation splits and training the tokenizers
 
 Each dataset then yields variable-length integer token tensors instead of raw text strings.
 
+## Task 3: Pipeline
+
+File: `3-dataset.py`
+
+### Task
+
+Extend the `Dataset` class with a complete `tf.data` input pipeline. The constructor takes `batch_size` and `max_len`.
+
+### Training pipeline
+
+1. Load the training split and encode sentence pairs with `tf_encode`.
+2. Filter out any pair where the Portuguese or English token sequence is longer than `max_len`.
+3. Cache the filtered dataset.
+4. Shuffle it with `buffer_size=20000`.
+5. Group examples into padded batches of `batch_size`, padding variable-length token sequences with zero.
+6. Prefetch batches with `tf.data.experimental.AUTOTUNE`.
+
+### Validation pipeline
+
+1. Load and encode the validation split.
+2. Apply the same maximum-length filter.
+3. Group examples into padded batches of `batch_size`.
+
+Validation is not shuffled, cached, or prefetched by this task specification.
+
+### Length filtering
+
+The filter keeps an example only when both conditions are true:
+
+- `tf.size(pt) <= max_len`
+- `tf.size(en) <= max_len`
+
+The resulting batches have shapes `(batch_size, padded_pt_length)` and `(batch_size, padded_en_length)`; the padded lengths can differ between batches and between languages.
+
