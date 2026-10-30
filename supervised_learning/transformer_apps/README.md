@@ -209,3 +209,45 @@ Implement `create_masks(inputs, target)` using TensorFlow operations only. Paddi
 
 The function returns `encoder_mask, combined_mask, decoder_mask` in that order. Both encoder and decoder masks use the input padding positions; the combined mask uses target padding positions plus the look-ahead mask.
 
+## Task 5: Train
+
+Files: `5-transformer.py`, `5-train.py`
+
+### Transformer model
+
+`5-transformer.py` contains a self-contained encoder-decoder Transformer:
+
+- Sinusoidal positional encoding.
+- Scaled dot-product attention and multi-head attention.
+- Encoder blocks with residual connections, layer normalization, and feed-forward layers.
+- Decoder blocks with causal self-attention, encoder-decoder attention, residual connections, and feed-forward layers.
+- Separate source/target embeddings and a final Dense projection that returns target-vocabulary logits.
+
+The source and target vocabulary sizes are each the tokenizer vocabulary size plus two, to include the custom start and end token IDs.
+
+### Training loop
+
+`5-train.py` defines `train_transformer(N, dm, h, hidden, max_len, batch_size, epochs)`. It:
+
+1. Creates the `Dataset(batch_size, max_len)` data pipeline.
+2. Builds the Transformer with the Portuguese and English vocabulary sizes.
+3. Uses Adam with `beta_1=0.9`, `beta_2=0.98`, and `epsilon=1e-9`.
+4. Applies the Transformer learning-rate schedule with `warmup_steps=4000`:
+
+   `dm ** -0.5 * min(step ** -0.5, step * warmup_steps ** -1.5)`
+
+5. Uses teacher forcing: the decoder input is `target[:, :-1]` and the expected output is `target[:, 1:]`.
+6. Computes sparse categorical cross-entropy from logits and excludes target padding tokens (ID `0`) from both loss and accuracy.
+7. Prints running loss and accuracy every 50 batches and the final metrics at the end of each epoch.
+8. Returns the trained Transformer model.
+
+### Run
+
+With the dataset archive, `setup.py`, and dependencies installed, run the supplied task test:
+
+```bash
+python3 5-main.py
+```
+
+A short two-epoch run is intended as a functional smoke test. Longer training (20 or more epochs) is needed for more substantial translation quality.
+
