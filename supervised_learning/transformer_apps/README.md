@@ -129,3 +129,30 @@ for pt, en in data.data_train.take(1):
     print(en_tokens)
 ```
 
+## Task 2: TF Encode
+
+File: `2-dataset.py`
+
+### Task
+
+Extend the `Dataset` class with `tf_encode(pt, en)`, a TensorFlow wrapper around the Python `encode` method, and map it over both the training and validation splits.
+
+### TensorFlow wrapper
+
+The method uses `tf.py_function` to call `self.encode` from a `tf.data.Dataset` pipeline:
+
+- Inputs: `[pt, en]`
+- Output types: `[tf.int64, tf.int64]`
+- Dynamic shapes: call `set_shape([None])` on both returned tensors because tokenized sentence lengths vary.
+
+It returns the Portuguese and English token tensors in that order.
+
+### Dataset updates
+
+After loading the raw training and validation splits and training the tokenizers on the training split, the constructor maps `self.tf_encode` over both datasets:
+
+- `data_train = data_train.map(self.tf_encode)`
+- `data_valid = data_valid.map(self.tf_encode)`
+
+Each dataset then yields variable-length integer token tensors instead of raw text strings.
+
