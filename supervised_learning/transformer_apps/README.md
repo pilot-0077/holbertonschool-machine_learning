@@ -190,3 +190,22 @@ The filter keeps an example only when both conditions are true:
 
 The resulting batches have shapes `(batch_size, padded_pt_length)` and `(batch_size, padded_en_length)`; the padded lengths can differ between batches and between languages.
 
+## Task 4: Create Masks
+
+File: `4-create_masks.py`
+
+### Task
+
+Implement `create_masks(inputs, target)` using TensorFlow operations only. Padding token ID `0` is masked with values of `1.0`.
+
+### Masks
+
+- **Encoder mask**: identifies padding tokens in `inputs` and has shape `(batch_size, 1, 1, seq_len_in)`.
+- **Look-ahead mask**: an upper-triangular matrix that masks future target positions while leaving the current and previous positions visible.
+- **Target padding mask**: identifies padding tokens in `target`. The combined decoder mask is the element-wise maximum of this mask and the look-ahead mask, with shape `(batch_size, 1, seq_len_out, seq_len_out)`.
+- **Decoder mask**: identifies padding positions in the source `inputs` for the decoder's second attention block; its shape is `(batch_size, 1, 1, seq_len_in)`.
+
+### Return value
+
+The function returns `encoder_mask, combined_mask, decoder_mask` in that order. Both encoder and decoder masks use the input padding positions; the combined mask uses target padding positions plus the look-ahead mask.
+
