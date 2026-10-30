@@ -27,3 +27,20 @@ of the final response to the user.
 
 - GitHub repository: `holbertonschool-machine_learning`
 - Directory: `supervised_learning/qa_bot`
+
+## Task 0: Question Answering
+
+The `0-qa.py` module implements extractive question answering with the
+TensorFlow Hub `bert-uncased-tf2-qa` model and the Hugging Face
+`BertTokenizer` associated with
+`bert-large-uncased-whole-word-masking-finetuned-squad`.
+
+The `question_answer(question, reference)` function tokenizes the question
+and reference, builds BERT inputs, and uses the model's start and end logits
+to select an answer span from the reference. Long references are processed
+in overlapping windows to respect BERT's 512-token input limit. It returns
+the extracted text, or `None` when the input is empty or the best span is
+below the configured confidence threshold.
+
+The first call downloads the TensorFlow Hub model and tokenizer assets if
+they are not already cached locally.
